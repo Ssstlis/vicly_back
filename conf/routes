@@ -1,0 +1,7 @@
+#User
+POST        /login           controllers.UserController.login
+GET         /logout          controllers.UserController.logout
+
+#Messages
+GET         /messages        controllers.MainController.messages
+POST        /post            controllers.MainController.postMessage
