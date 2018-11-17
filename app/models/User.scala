@@ -16,13 +16,15 @@ case class User(
   password: String,
   login: String,
   active: Boolean,
-  @Key("join_time") joinTime: Int
+  @Key("join_time") joinTime: Int,
+  id: Int
 )
 
 trait UserJson {
   private def toJson(u: User) = {
     Json.obj(
       "id" -> u._id,
+      "id" -> u.id,
       "first_name" -> u.firstName,
       "last_name" -> u.lastName,
       "group_id" -> u.groupId,
@@ -40,7 +42,7 @@ trait UserJson {
     toJson(u) + ("token" -> Json.toJson(token))
   }
 
-  implicit val reads: Reads[User] = (
+  def reads(id: => Int): Reads[User] = (
     Reads.pure(new ObjectId()) and
     ((__ \ "first_name").read[String] orElse Reads.pure("")) and
     ((__ \ "last_name").read[String] orElse Reads.pure("")) and
@@ -48,7 +50,8 @@ trait UserJson {
     (__ \ "password").read[String] and
     (__ \ "login").read[String] and
     Reads.pure(true) and
-    Reads.pure(DateTime.now.timestamp)
+    Reads.pure(DateTime.now.timestamp) and
+    Reads.pure(id)
   )(User.apply _)
 }
 

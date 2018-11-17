@@ -27,7 +27,7 @@ class MessageController @Inject()(
 
   def postMessage = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
-    request.body.validate(Message.reads(user._id)).map { message =>
+    request.body.validate(Message.reads(user.id)).map { message =>
       val isWrite = messageService.add(message).wasAcknowledged()
       if (isWrite) Ok else ResetContent
     }.getOrElse(BadRequest)

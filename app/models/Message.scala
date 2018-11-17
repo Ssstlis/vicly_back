@@ -11,7 +11,7 @@ import utils.JsonHelper.ObjectIdFormat
 
 case class Message(
   _id: ObjectId,
-  from: ObjectId,
+  from: Int,
   key: String,
   text: String,
   @Key("reply_for") replyForO: Option[ObjectId],
@@ -37,7 +37,7 @@ trait MessageJson {
     )
   }
 
-  def reads(from: ObjectId): Reads[Message] = (
+  def reads(from: Int): Reads[Message] = (
     Reads.pure(from) and
     ((__ \ "key").read[String] orElse Reads.pure("")) and
     (__ \ "text").read[String] and
@@ -47,7 +47,7 @@ trait MessageJson {
 }
 
 object Message extends MessageJson {
-  def applyFromJson(from: ObjectId, key: String, text: String, replyForO: Option[ObjectId], chatId: Int) = {
+  def applyFromJson(from: Int, key: String, text: String, replyForO: Option[ObjectId], chatId: Int) = {
     val offset = Calendar.getInstance().getTimeZone.getRawOffset
     Message(new ObjectId(), from, key, text, replyForO, chatId, MessageTime(DateTime.now.getMillis, offset))
   }

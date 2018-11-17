@@ -7,7 +7,7 @@ import models.json.UserJson._
 import pdi.jwt.JwtJson
 import play.api.libs.json.Json
 import play.api.mvc.InjectedController
-import services.{ConfigService, GroupService, UserService}
+import services._
 import utils.CollectionHelper.TraversableOnceHelper
 import utils.JsonHelper.ObjectIdFormat
 
@@ -16,10 +16,11 @@ class UserController @Inject()(
   authUtils: AuthUtils,
   config: ConfigService,
   groupService: GroupService,
+  messageService: MessageService,
   userService: UserService
 ) extends InjectedController {
 
-  def signup = Action(parse.json[User]) { request =>
+  def signup = Action(parse.json(User.reads(userService.nextId))) { request =>
     val user = request.body
     userService.findByLogin(user.login).fold {
       userService.create(user)

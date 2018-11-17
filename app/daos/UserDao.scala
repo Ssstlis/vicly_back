@@ -17,6 +17,10 @@ class UserDao @Inject()(
 
   val dao = new SalatDAO[User, ObjectId](playSalat.collection("user", "ms")){}
 
+  def maxId = {
+    dao.find(MongoDBObject.empty).sort(MongoDBObject("id" -> 1)).limit(1).toList.headOption.map(_.id).getOrElse(0)
+  }
+
   def findOne(id: Int) = {
     dao.findOne(MongoDBObject("id" -> id))
   }

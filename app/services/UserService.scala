@@ -8,6 +8,10 @@ import org.bson.types.ObjectId
 @Singleton
 class UserService @Inject()(userDao: UserDao) {
 
+  def maxId = userDao.maxId
+
+  def nextId = maxId + 1
+
   def findOne(id: Int) = userDao.findOne(id)
 
   def findByLoginAndPassword(login: String, password: String) = {
