@@ -16,11 +16,10 @@ class GroupController @Inject()(
   def create(name: String) = authUtils.authenticateAction { request =>
     val user = request.user
     val id = groupService.nextId
-    groupService.create(Group(user, name, id))
-    Ok
+    if (groupService.create(Group(user, name, id)).wasAcknowledged) Ok else NotImplemented
   }
 
-  def list = authUtils.authenticateAction { _ =>
+  def list = authUtils.authenticateAction {
     Ok(Json.toJson(groupService.all))
   }
 

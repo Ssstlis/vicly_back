@@ -12,7 +12,7 @@ case class User(
   _id: ObjectId,
   @Key("first_name") firstName: String,
   @Key("last_name") lastName: String,
-  @Key("group_id") groupId: Int,
+  @Key("group_id") groupId: Option[Int],
   password: String,
   login: String,
   active: Boolean,
@@ -44,7 +44,7 @@ trait UserJson {
     Reads.pure(new ObjectId()) and
     ((__ \ "first_name").read[String] orElse Reads.pure("")) and
     ((__ \ "last_name").read[String] orElse Reads.pure("")) and
-    (__ \ "group_id").read[Int] and
+    (__ \ "group_id").readNullable[Int] and
     (__ \ "password").read[String] and
     (__ \ "login").read[String] and
     Reads.pure(true) and

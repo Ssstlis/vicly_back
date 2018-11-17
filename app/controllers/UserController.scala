@@ -19,6 +19,14 @@ class UserController @Inject()(
   userService: UserService
 ) extends InjectedController {
 
+  def signup = Action(parse.json[User]) { request =>
+    val user = request.body
+    userService.findByLogin(user.login).fold {
+      userService.create(user)
+      Ok
+    }(_ => BadRequest)
+  }
+
   def login = Action(parse.json) { request =>
     val json = request.body
     (for {
@@ -39,25 +47,27 @@ class UserController @Inject()(
     Ok.withHeaders()
   }
 
-  def signup = Action(parse.json[User]) { request =>
-    val user = request.body
-    userService.findByLogin(user.login).fold {
-      userService.create(user)
-      Ok
-    }(_ => BadRequest)
-  }
-
-  def list = authUtils.authenticateAction { _ =>
+  def list = authUtils.authenticateAction {
     val groups = groupService.all.zipBy(_.id)
 
-    val (usersWithoutGroup, usersWithGroups) = userService.all
-      .groupBy(_.groupId)
-      .map { case (groupId, users) =>
-        groups.get(groupId).map(group => Right(group -> users)).getOrElse(Left(users))
-      }.toList.partition(_.isLeft)
+    val users = userService.all.map {
+      case user if user.groupId.isDefined => Right(user)
+      case user => Left(user)
+    }.view
 
-    val withoutGroup = usersWithoutGroup.collect { case Left(users) => users }.flatten
-    val withGroups = usersWithGroups.collect { case Right(value) => value }.toMap
+    val usersWithoutGroup = users.collect { case Left(user) => user }.toList
+
+    val usersWithGroup = users
+      .collect { case Right(user) => user }
+      .groupBy(_.groupId)
+      .collect { case (Some(groupId), users) => groups.get(groupId) -> users }
+      .collect {
+        case (Some(group), users) => Right(group, users)
+        case (_, users) => Left(users)
+      }.toList
+
+    val withoutGroup = usersWithGroup.collect { case Left(users) => users }.flatten ::: usersWithoutGroup
+    val withGroups = usersWithGroup.collect { case Right((groupId, users)) => groupId -> users.toList }.toMap
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))
   }
