@@ -30,7 +30,7 @@ class AuthUtils @Inject()(
     override protected def executionContext = ec
   }
 
-  val authenticateAction = new AbstractActionBuilder[UserRequest] {
+  val authenticateAction: AbstractActionBuilder[UserRequest] = new AbstractActionBuilder[UserRequest] {
     def decodeToken(token: String) = {
       JwtJson.decodeJson(token, config.secret_key, Seq(config.algo)).toOption
     }

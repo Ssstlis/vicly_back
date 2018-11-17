@@ -1,7 +1,14 @@
 #User
-POST        /login           controllers.UserController.login
-GET         /logout          controllers.UserController.logout
+POST        /api/user/login                controllers.UserController.login
+GET         /api/user/logout               controllers.UserController.logout
+POST        /api/user/signup               controllers.UserController.signup
+GET         /api/user/list                 controllers.UserController.list
+
+#Group
+GET         /api/group/create/:name        controllers.GroupController.create(name: String)
+GET         /api/group/list                controllers.GroupController.list
+POST        /api/group/set_purpose         controllers.GroupController.setPurpose
 
 #Messages
-GET         /messages        controllers.MainController.messages
-POST        /post            controllers.MainController.postMessage
+GET         /api/message/messages          controllers.MessageController.messages
+POST        /api/message/post              controllers.MessageController.postMessage

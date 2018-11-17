@@ -3,22 +3,17 @@ package controllers
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
 import models.Message
-import pdi.jwt.JwtAlgorithm
 import play.api.libs.json.Json
 import play.api.mvc.InjectedController
 import services.{ChatService, MessageService}
 import utils.CollectionHelper.TraversableOnceHelper
 
 @Singleton
-class MainController @Inject()(
+class MessageController @Inject()(
   authUtils: AuthUtils,
   chatService: ChatService,
   messageService: MessageService
 ) extends InjectedController {
-
-  val algo = Seq(JwtAlgorithm.HS256, JwtAlgorithm.HMD5, JwtAlgorithm.HS384)
-
-  val key = "secretKey"
 
   def messages = Action {
     val messages = messageService.all

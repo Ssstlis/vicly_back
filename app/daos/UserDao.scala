@@ -21,6 +21,8 @@ class UserDao @Inject()(
     dao.findOne(MongoDBObject("id" -> id))
   }
 
+  def all = findAll().toList
+
   def findByLoginAndPassword(login: String, password: String) = {
     dao.findOne(MongoDBObject(
       "login" -> login,
@@ -31,7 +33,7 @@ class UserDao @Inject()(
   def setActive(user: User) = {
     dao.update(
       MongoDBObject("_id" -> user._id),
-      MongoDBObject("active" -> true)
+      MongoDBObject("$set" -> MongoDBObject("active" -> true))
     )
   }
 
@@ -40,5 +42,11 @@ class UserDao @Inject()(
       MongoDBObject("_id" -> user._id),
       MongoDBObject("active" -> false)
     )
+  }
+
+  def findByLogin(login: String) = {
+    dao.findOne(MongoDBObject(
+      "login" -> login
+    ))
   }
 }

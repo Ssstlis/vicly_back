@@ -19,4 +19,10 @@ class UserService @Inject()(userDao: UserDao) {
   def setInactive(user: User) = userDao.setInactive(user)
 
   def find(id: ObjectId) = userDao.findOneById(id)
+
+  def findByLogin(login: String) = userDao.findByLogin(login)
+
+  def create(user: User) = userDao.dao.save(user)
+
+  def all = userDao.all
 }
