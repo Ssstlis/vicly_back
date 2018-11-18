@@ -6,6 +6,7 @@ import models.Group
 import org.bson.types.ObjectId
 import ru.tochkak.plugin.salat.PlaySalat
 import salat.dao.{ModelCompanion, SalatDAO}
+import utils.MongoDbHelper.MongoDbCursorExtended
 
 @Singleton
 class GroupDao @Inject()(
@@ -17,14 +18,14 @@ class GroupDao @Inject()(
 
   val dao = new SalatDAO[Group, ObjectId](playSalat.collection("group", "ms")){}
 
-  def all = findAll().toList
+  def all = {
+    dao.find(MongoDBObject.empty).toList
+  }
 
   def maxId = {
     dao.find(MongoDBObject.empty)
-      .sort(MongoDBObject("id" -> 1))
-      .limit(1)
-      .collectFirst { case value => value }
-      .fold(0)(_.id)
+      .sort(MongoDBObject("id" -> -1))
+      .foldHeadO(0)(_.id)
   }
 
   def create(group: Group) = save(group)

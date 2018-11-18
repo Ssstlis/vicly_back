@@ -13,10 +13,12 @@ class GroupController @Inject()(
   groupService: GroupService
 ) extends InjectedController {
 
-  def create(name: String) = authUtils.authenticateAction { request =>
-    val user = request.user
-    val id = groupService.nextId
-    if (groupService.create(Group(user, name, id)).wasAcknowledged) Ok else NotImplemented
+  def create = authUtils.authenticateAction(parse.json) { request =>
+    (request.body \ "name").asOpt[String].map { name =>
+      val user = request.user
+      val id = groupService.nextId
+      if (groupService.create(Group(user, name, id)).wasAcknowledged) Ok else NotImplemented
+    }.getOrElse(BadRequest)
   }
 
   def list = authUtils.authenticateAction {

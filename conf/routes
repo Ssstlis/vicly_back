@@ -1,20 +1,20 @@
 #User
-POST        /api/user/login                controllers.UserController.login
-GET         /api/user/logout               controllers.UserController.logout
-POST        /api/user/signup               controllers.UserController.signup
-GET         /api/user/list                 controllers.UserController.list
+POST        /api/user/login               controllers.UserController.login
+GET         /api/user/logout              controllers.UserController.logout
+POST        /api/user/signup              controllers.UserController.signup
+GET         /api/user/list                controllers.UserController.list
 
 #Invite
-POST        /api/invite                    controllers.InviteController.create
-GET         /api/invite/list               controllers.InviteController.list
-GET         /api/invite/:uuid              controllers.InviteController.one(uuid: String)
-POST        /api/invite/signup             controllers.InviteController.signup
+POST        /api/invite                   controllers.InviteController.create(group_id: Option[Int])
+GET         /api/invite/list              controllers.InviteController.list
+GET         /api/invite/:uuid             controllers.InviteController.one(uuid: String)
+POST        /api/invite/signup            controllers.InviteController.signup
 
 #Group
-GET         /api/group/create/:name        controllers.GroupController.create(name: String)
-GET         /api/group/list                controllers.GroupController.list
-POST        /api/group/set_purpose         controllers.GroupController.setPurpose
+POST        /api/group/create             controllers.GroupController.create
+GET         /api/group/list               controllers.GroupController.list
+POST        /api/group/set_purpose        controllers.GroupController.setPurpose
 
 #Messages
-GET         /api/message/messages          controllers.MessageController.messages
-POST        /api/message/post              controllers.MessageController.postMessage
+GET         /api/message/messages         controllers.MessageController.messages
+POST        /api/message/post             controllers.MessageController.postMessage

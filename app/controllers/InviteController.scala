@@ -9,27 +9,37 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import play.api.mvc.InjectedController
-import services.{InviteService, UserService}
-import utils.Helper.DateTimeExtended
+import services.{GroupService, InviteService, UserService}
+import utils.Helper.{DateTimeExtended, StringExtended}
 
 @Singleton
 class InviteController @Inject()(
   authUtils: AuthUtils,
+  groupService: GroupService,
   inviteService: InviteService,
   userService: UserService
 ) extends InjectedController {
 
-  def create = authUtils.authenticateAction(parse.json) { request =>
+  def create(groupIdO: Option[Int]) = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
 
+    lazy val groups = groupService.all.sortBy(_.id)
+
+    lazy val owningGroups = groups.filter(_.owner == user._id)
+
+    lazy val groupO = groupIdO.flatMap { groupId =>
+      groups.find(_.id == groupId)
+    }
+
     (for {
       groupId <- user.groupId
+      group <- groupO.orElse(owningGroups.headOption).orElse(groups.find(_.id == groupId))
       firstName <- (json \ "first_name").asOpt[String]
       lastName <- (json \ "last_name").asOpt[String]
     } yield {
       val uuid = randomUUID().toString
-      val invite = Invite(firstName, lastName, uuid, groupId, user.id)
+      val invite = Invite(firstName, lastName, uuid, group.id, user.id)
       if (inviteService.create(invite).wasAcknowledged()) {
         Ok(Json.obj("invite_id" -> uuid))
       } else {
@@ -60,7 +70,7 @@ class InviteController @Inject()(
         invite.firstName,
         invite.lastName,
         Some(invite.groupId),
-        password,
+        password.md5.md5.md5,
         login,
         active = false,
         DateTime.now.timestamp,

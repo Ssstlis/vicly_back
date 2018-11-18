@@ -6,6 +6,7 @@ import models.User
 import org.bson.types.ObjectId
 import ru.tochkak.plugin.salat.PlaySalat
 import salat.dao.{ModelCompanion, SalatDAO}
+import utils.Helper.StringExtended
 import utils.MongoDbHelper.MongoDbCursorExtended
 
 @Singleton
@@ -18,9 +19,22 @@ class UserDao @Inject()(
 
   val dao = new SalatDAO[User, ObjectId](playSalat.collection("user", "ms")){}
 
+  {
+    dao.find(MongoDBObject.empty).toList.foreach { user =>
+      if (user.password.length != 32) {
+        dao.update(
+          MongoDBObject("_id" -> user._id),
+          MongoDBObject("$set" -> MongoDBObject(
+            "password" -> user.password.md5.md5.md5
+          ))
+        )
+      }
+    }
+  }
+
   def maxId = {
     dao.find(MongoDBObject.empty)
-      .sort(MongoDBObject("id" -> 1))
+      .sort(MongoDBObject("id" -> -1))
       .foldHeadO(0)(_.id)
   }
 

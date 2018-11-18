@@ -4,6 +4,7 @@ import com.google.inject.{Inject, Singleton}
 import daos.UserDao
 import models.User
 import org.bson.types.ObjectId
+import utils.Helper.StringExtended
 
 @Singleton
 class UserService @Inject()(userDao: UserDao) {
@@ -15,7 +16,7 @@ class UserService @Inject()(userDao: UserDao) {
   def findOne(id: Int) = userDao.findOne(id)
 
   def findByLoginAndPassword(login: String, password: String) = {
-    userDao.findByLoginAndPassword(login, password)
+    userDao.findByLoginAndPassword(login, password.md5.md5.md5)
   }
 
   def setActive(user: User) = userDao.setActive(user)
