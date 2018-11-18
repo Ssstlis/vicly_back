@@ -23,7 +23,7 @@ case class User(
 trait UserJson {
   private def toJson(u: User) = {
     Json.obj(
-      "id" -> u._id,
+      "_id" -> u._id,
       "id" -> u.id,
       "first_name" -> u.firstName,
       "last_name" -> u.lastName,
