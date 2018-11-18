@@ -4,6 +4,12 @@ GET         /api/user/logout               controllers.UserController.logout
 POST        /api/user/signup               controllers.UserController.signup
 GET         /api/user/list                 controllers.UserController.list
 
+#Invite
+POST        /api/invite                    controllers.InviteController.create
+GET         /api/invite/list               controllers.InviteController.list
+GET         /api/invite/:uuid              controllers.InviteController.one(uuid: String)
+POST        /api/invite/signup             controllers.InviteController.signup
+
 #Group
 GET         /api/group/create/:name        controllers.GroupController.create(name: String)
 GET         /api/group/list                controllers.GroupController.list

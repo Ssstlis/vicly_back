@@ -1,9 +1,6 @@
 package models
 
-import java.util.Calendar
-
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import salat.annotations.Key
@@ -38,17 +35,17 @@ trait MessageJson {
   }
 
   def reads(from: Int): Reads[Message] = (
+    Reads.pure(new ObjectId()) and
     Reads.pure(from) and
     ((__ \ "key").read[String] orElse Reads.pure("")) and
     (__ \ "text").read[String] and
     (__ \ "reply_for").readNullable[ObjectId] and
-    (__ \ "chat_id").read[Int]
-  )(Message.applyFromJson _)
+    (__ \ "chat_id").read[Int] and
+    Reads.pure(MessageTime()) and
+    Reads.pure(None) and
+    Reads.pure(None) and
+    Reads.pure(None)
+  )(Message.apply _)
 }
 
-object Message extends MessageJson {
-  def applyFromJson(from: Int, key: String, text: String, replyForO: Option[ObjectId], chatId: Int) = {
-    val offset = Calendar.getInstance().getTimeZone.getRawOffset
-    Message(new ObjectId(), from, key, text, replyForO, chatId, MessageTime(DateTime.now.getMillis, offset))
-  }
-}
+object Message extends MessageJson

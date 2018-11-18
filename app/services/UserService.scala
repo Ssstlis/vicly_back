@@ -29,4 +29,6 @@ class UserService @Inject()(userDao: UserDao) {
   def create(user: User) = userDao.dao.save(user)
 
   def all = userDao.all
+
+  def save(user: User) = userDao.save(user)
 }

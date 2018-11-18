@@ -6,6 +6,7 @@ import models.User
 import org.bson.types.ObjectId
 import ru.tochkak.plugin.salat.PlaySalat
 import salat.dao.{ModelCompanion, SalatDAO}
+import utils.MongoDbHelper.MongoDbCursorExtended
 
 @Singleton
 class UserDao @Inject()(
@@ -18,7 +19,9 @@ class UserDao @Inject()(
   val dao = new SalatDAO[User, ObjectId](playSalat.collection("user", "ms")){}
 
   def maxId = {
-    dao.find(MongoDBObject.empty).sort(MongoDBObject("id" -> 1)).limit(1).toList.headOption.map(_.id).getOrElse(0)
+    dao.find(MongoDBObject.empty)
+      .sort(MongoDBObject("id" -> 1))
+      .foldHeadO(0)(_.id)
   }
 
   def findOne(id: Int) = {

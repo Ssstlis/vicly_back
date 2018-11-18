@@ -16,6 +16,7 @@ class UserController @Inject()(
   authUtils: AuthUtils,
   config: ConfigService,
   groupService: GroupService,
+  inviteService: InviteService,
   messageService: MessageService,
   userService: UserService
 ) extends InjectedController {
@@ -54,21 +55,29 @@ class UserController @Inject()(
     val users = userService.all.map {
       case user if user.groupId.isDefined => Right(user)
       case user => Left(user)
-    }.view
+    }.par
 
     val usersWithoutGroup = users.collect { case Left(user) => user }.toList
 
     val usersWithGroup = users
       .collect { case Right(user) => user }
       .groupBy(_.groupId)
-      .collect { case (Some(groupId), users) => groups.get(groupId) -> users }
-      .collect {
-        case (Some(group), users) => Right(group, users)
-        case (_, users) => Left(users)
-      }.toList
+      .map { case (groupIdO, users) => {
+        (for {
+          groupId <- groupIdO
+          group <- groups.get(groupId)
+        } yield {
+          Right(group -> users)
+        }).getOrElse(Left(users))
+      }
+    }
 
-    val withoutGroup = usersWithGroup.collect { case Left(users) => users }.flatten ::: usersWithoutGroup
-    val withGroups = usersWithGroup.collect { case Right((groupId, users)) => groupId -> users.toList }.toMap
+    val withoutGroup = usersWithoutGroup ::: usersWithGroup.flatMap {
+      case Left(users) => users
+      case _ => List.empty[User]
+    }.toList
+
+    val withGroups = usersWithGroup.collect { case Right((groupId, users)) => groupId -> users.seq }.toMap.seq
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))
   }

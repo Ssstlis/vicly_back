@@ -20,7 +20,11 @@ class GroupDao @Inject()(
   def all = findAll().toList
 
   def maxId = {
-    dao.find(MongoDBObject.empty).sort(MongoDBObject("id" -> 1)).limit(1).toList.headOption.map(_.id).getOrElse(0)
+    dao.find(MongoDBObject.empty)
+      .sort(MongoDBObject("id" -> 1))
+      .limit(1)
+      .collectFirst { case value => value }
+      .fold(0)(_.id)
   }
 
   def create(group: Group) = save(group)
