@@ -2,7 +2,7 @@ package daos
 
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.MongoDBObject
-import models.Message
+import models.{Message, MessageTime}
 import org.bson.types.ObjectId
 import ru.tochkak.plugin.salat.PlaySalat
 import salat.dao.{ModelCompanion, SalatDAO}
@@ -24,5 +24,29 @@ class MessageDao @Inject()(
 
   def all = {
     dao.find(MongoDBObject.empty).toList
+  }
+
+  def findByChatId(chatId: Int) = {
+    dao.find(MongoDBObject(
+      "chat_id" -> chatId
+    )).toList
+  }
+
+  def markRead(id: ObjectId) = {
+    dao.update(
+      MongoDBObject("_id" -> id),
+      MongoDBObject("$set" -> MongoDBObject(
+        "timestamp_read" -> MessageTime()
+      ))
+    )
+  }
+
+  def markDelivery(id: ObjectId) = {
+    dao.update(
+      MongoDBObject("_id" -> id),
+      MongoDBObject("$set" -> MongoDBObject(
+        "timestamp_delivery" -> MessageTime()
+      ))
+    )
   }
 }

@@ -7,7 +7,7 @@ import play.api.libs.json.Json
 
 case class MessageTime(
   timestamp: Long = DateTime.now.getMillis,
-  zone: Int = Calendar.getInstance().getTimeZone.getRawOffset
+  zone: String = s"UTC+${Calendar.getInstance().getTimeZone.getRawOffset / 3600000}"
 )
 
 trait MessageTimeJson {

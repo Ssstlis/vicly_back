@@ -11,5 +11,6 @@ val hack_backend = project
     ),
     name := "backend",
     version := "0.1",
-    scalaVersion := "2.12.7")
+    scalaVersion := "2.12.7"
+  )
   .enablePlugins(PlayScala)

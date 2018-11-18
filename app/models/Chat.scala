@@ -1,15 +1,20 @@
 package models
 
-import org.bson.types.ObjectId
 import play.api.libs.json.{Json, Writes}
+import salat.annotations.Key
 
-case class Chat(id: Int, groupId: Int, users: List[ObjectId])
+case class Chat(
+  id: Int,
+  @Key("group_id") groupId: Int,
+  @Key("user_ids") userIds: List[Int]
+)
 
 trait ChatJson {
   implicit val writes: Writes[Chat] = (c: Chat) => {
     Json.obj(
       "id" -> c.id,
-      "group_id" -> c.groupId
+      "group_id" -> c.groupId,
+      "user_ids" -> c.userIds
     )
   }
 }

@@ -20,27 +20,33 @@ case class Message(
 )
 
 trait MessageJson {
-  def writes(chatO: Option[Chat]): Writes[Message] = (m: Message) => {
+  private def toJson(m: Message) = {
     Json.obj(
       "id" -> m._id,
       "from" -> m.from,
-      "chat" -> chatO,
       "key" -> m.key,
+      "message" -> m.text,
       "reply_for" -> m.replyForO,
       "timestamp_post" -> m.timestampPost,
-      "timestamp_cahnge" -> m.timestampChange,
+      "timestamp_change" -> m.timestampChange,
       "timestamp_delivery" -> m.timestampDelivery,
       "timestamp_read" -> m.timestampRead
     )
+  }
+
+  implicit val writes: Writes[Message] = (m: Message) => toJson(m)
+
+  def writes(chatO: Option[Chat]): Writes[Message] = (m: Message) => {
+    toJson(m) + ("chat" -> Json.toJson(chatO))
   }
 
   def reads(from: Int): Reads[Message] = (
     Reads.pure(new ObjectId()) and
     Reads.pure(from) and
     ((__ \ "key").read[String] orElse Reads.pure("")) and
-    (__ \ "text").read[String] and
+    (__ \ "message").read[String] and
     (__ \ "reply_for").readNullable[ObjectId] and
-    (__ \ "chat_id").read[Int] and
+    (__ \ "id").read[Int] and
     Reads.pure(MessageTime()) and
     Reads.pure(None) and
     Reads.pure(None) and
