@@ -12,10 +12,10 @@ import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class AuthUtils @Inject()(
-  config: ConfigService,
-  defaultParser: BodyParsers.Default,
-  userService: UserService
-)(implicit ec: ExecutionContext) {
+                           config: ConfigService,
+                           defaultParser: BodyParsers.Default,
+                           userService: UserService
+                         )(implicit ec: ExecutionContext) {
 
   abstract class AbstractActionBuilder[T[_]] extends ActionBuilder[T, AnyContent] {
     override protected def executionContext = ec
@@ -36,9 +36,9 @@ class AuthUtils @Inject()(
     }
 
     override def invokeBlock[A](
-      request: Request[A],
-      block: UserRequest[A] => Future[Result]
-    ) = {
+                                 request: Request[A],
+                                 block: UserRequest[A] => Future[Result]
+                               ) = {
       (for {
         token <- request.headers.get("Authorization")
         json <- decodeToken(token)

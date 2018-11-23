@@ -24,31 +24,36 @@ class MessageController @Inject()(
       chatType@("user" | "group") <- (request.body \ "type").asOpt[String]
     } yield {
       chatType match {
-        case "user" => chatService.findUserChat(user.id, message.chatId).map { chat =>
-          if (
-            userService.findOne(message.chatId).isDefined &&
-            messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()
-          ) {
-            Ok
-          } else {
-            ResetContent
-          }
-        }.getOrElse {
-          if (
-            userService.findOne(message.chatId).isDefined &&
-            chatService.createUserChat(user.id, message.chatId, groupId)
-          ) {
+        case "user" =>
+          if (userService.findByIdNonArchive(message.chatId).isEmpty) {
             chatService.findUserChat(user.id, message.chatId).map { chat =>
-              if (messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()) {
+              if (
+                userService.findOne(message.chatId).isDefined &&
+                  messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()
+              ) {
                 Ok
+              } else {
+                ResetContent
+              }
+            }.getOrElse {
+              if (
+                userService.findOne(message.chatId).isDefined &&
+                  chatService.createUserChat(user.id, message.chatId, groupId)
+              ) {
+                chatService.findUserChat(user.id, message.chatId).map { chat =>
+                  if (messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()) {
+                    Ok
+                  } else {
+                    BadRequest
+                  }
+                }.getOrElse(BadRequest)
               } else {
                 BadRequest
               }
-            }.getOrElse(BadRequest)
+            }
           } else {
             BadRequest
           }
-        }
         case "group" =>
           chatService.findGroupChat(message.chatId).collect {
             case chat if messageService.save(message.copy(chatId = chat.id)).wasAcknowledged() => Ok

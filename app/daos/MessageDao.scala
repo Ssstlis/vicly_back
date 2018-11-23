@@ -37,6 +37,8 @@ class MessageDao @Inject()(
     )).skip(page * 20).limit(20).toList
   }
 
+
+
   def markRead(id: ObjectId) = {
     findById(id).map(message =>
       dao.update(

@@ -47,7 +47,8 @@ class UserDao @Inject()(
       "_id" -> id,
       "login" -> login,
       "password" -> password,
-      "active" -> true
+      "active" -> true,
+      "archive" -> false
     ))
   }
 
@@ -56,7 +57,8 @@ class UserDao @Inject()(
   def findByLoginAndPassword(login: String, password: String) = {
     dao.findOne(MongoDBObject(
       "login" -> login,
-      "password" -> password
+      "password" -> password,
+      "archive" -> false
     ))
   }
 
@@ -101,4 +103,11 @@ class UserDao @Inject()(
       )
     )
   }
+ def findByIdNonArchive(id: Int) = {
+   dao.findOne(MongoDBObject(
+     "id" -> id,
+     "archive" -> false
+   ))
+ }
+
 }

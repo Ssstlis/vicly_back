@@ -5,13 +5,11 @@ import com.google.inject.{Inject, Singleton}
 import models.User
 import models.json.UserJson._
 import pdi.jwt.JwtJson
-import play.api.libs.json.Json
-import play.api.libs.json.__
+import play.api.libs.json.{Json, __}
 import play.api.mvc.InjectedController
 import services._
 import utils.CollectionHelper.TraversableOnceHelper
 import utils.JsonHelper.ObjectIdFormat
-import utils.Helper.StringExtended
 
 @Singleton
 class UserController @Inject()(
@@ -109,4 +107,5 @@ class UserController @Inject()(
       BadRequest
     }
   }
+
 }
