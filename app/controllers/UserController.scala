@@ -90,8 +90,21 @@ class UserController @Inject()(
   }
 
   def updatePassword = authUtils.authenticateAction(parse.json((__ \ "password").read[String])) { request =>
-    if (userService.updatePassword(request.user.id, request.body).isUpdateOfExisting) {
-      Ok
+    val user = request.user
+    val password = request.body
+
+    if (userService.updatePassword(user.id, password).isUpdateOfExisting) {
+      userService.findByLoginAndPassword(user.login, password).map { user =>
+        userService.setActive(user)
+        userService.updateActivity(user.id)
+        val claim = Json.obj(
+          "user_id" -> user._id,
+          "login" -> user.login,
+          "password" -> user.password
+        )
+        val token = JwtJson.encode(claim, config.secret_key, config.algo)
+        Ok(Json.toJson(user)(User.writesWithToken(token)))
+      }.getOrElse(BadRequest)
     } else {
       BadRequest
     }
