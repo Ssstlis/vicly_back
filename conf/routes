@@ -21,3 +21,5 @@ POST        /api/message/post                       controllers.MessageControlle
 GET         /api/message/chat/:id/:chat_type        controllers.MessageController.chatMessages(id: Int, chat_type: String, page: Int = 0)
 GET         /api/message/read                       controllers.MessageController.readMessage
 GET         /api/message/delivery                   controllers.MessageController.deliveryMessage
+POST        /api/message/delete                     controllers.MessageController.delete
+POST        /api/message/change                     controllers.MessageController.change

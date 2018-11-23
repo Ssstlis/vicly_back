@@ -14,8 +14,6 @@ class MessageService @Inject()(messageDao: MessageDao) {
 
   def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int)
 
-  def findByObjectId(id: ObjectId) = messageDao.findOneById(id)
-
   def read(id: ObjectId, chatId: Int) = messageDao.markRead(id, chatId)
 
   def delivery(id: ObjectId, chatId: Int) = messageDao.markDelivery(id, chatId)
@@ -24,11 +22,17 @@ class MessageService @Inject()(messageDao: MessageDao) {
 
   def findUnreadMessagesCount(id: Int, from: Int) = messageDao.findUnreadMessagesCount(id, from)
 
+  def findUnreadMessagesCount(id: Int) = messageDao.findUnreadMessagesCount(id)
+
   def findLastMessage(id: Int, from: Int) = messageDao.findLastMessage(id, from)
 
-  def change(oid: ObjectId, key: String, text: String) = messageDao.change(oid, key, text)
+  def findLastMessage(id: Int) = messageDao.findLastMessage(id)
+
+  def change(oid: ObjectId, userId: Int, key: String, text: String) = messageDao.change(oid, userId, key, text)
 
   def softDelete(oid: ObjectId) = messageDao.softDelete(oid)
 
   def remove(oid: ObjectId) = messageDao.removeById(oid)
+
+  def findChatIdByObjectId(id: ObjectId) = messageDao.findChatIdByObjectId(id)
 }

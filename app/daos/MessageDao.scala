@@ -31,37 +31,37 @@ class MessageDao @Inject()(
     dao.findOne(MongoDBObject("_id" -> id))
   }
 
+  def findNonDeliveredById(id: ObjectId) = {
+    dao.findOne(MongoDBObject(
+      "_id" -> id,
+      "timestamp_delivery" -> MongoDBObject("$exists" -> 0)
+    ))
+  }
+
+  def findNonReadById(id: ObjectId) = {
+    dao.findOne(MongoDBObject(
+      "_id" -> id,
+      "timestamp_read" -> MongoDBObject("$exists" -> 0)
+    ))
+  }
+
   def findByChatId(chatId: Int, page: Int) = {
     dao.find(MongoDBObject(
       "chat_id" -> chatId
     )).skip(page * 20).limit(20).toList
   }
-/*
-  def markRead(id: ObjectId) = {
-    findById(id).map(message =>
-      dao.update(
-        MongoDBObject("_id" -> id),
-        message.copy(timestampRead = Some(MessageTime())),
-        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
-      )
-    )
-  }
-
-  def markDelivery(id: ObjectId) = {
-    findById(id).map(message =>
-      dao.update(
-        MongoDBObject("_id" -> id),
-        message.copy(timestampDelivery = Some(MessageTime())),
-        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
-      )
-    )
-  }*/
 
   def findUnreadMessages(id: Int) = {
     dao.find(MongoDBObject(
       "chat_id" -> id,
       "timestamp_read" -> MongoDBObject("$exists" -> 0)
     )).toList
+  }
+
+  def findChatIdByObjectId(id: ObjectId) = {
+    dao.findOne(MongoDBObject(
+      "_id" -> id
+    )).map(_.chatId)
   }
 
   def findUnreadMessagesCount(id: Int, from: Int) = {
@@ -75,6 +75,14 @@ class MessageDao @Inject()(
           "deleted" -> false
         )
       )
+    ))
+  }
+
+  def findUnreadMessagesCount(id: Int) = {
+    dao.count(MongoDBObject(
+      "chat_id" -> id,
+      "timestamp_read" -> MongoDBObject("$exists" -> 0),
+      "deleted" -> false
     ))
   }
 
@@ -94,9 +102,20 @@ class MessageDao @Inject()(
       .headOption
   }
 
-  def change(oid: ObjectId, key: String, text: String) = {
+  def findLastMessage(id: Int) = {
+    dao.find(MongoDBObject("chat_id" -> id))
+      .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
+      .limit(1)
+      .toList
+      .headOption
+  }
+
+  def change(oid: ObjectId, userId: Int, key: String, text: String) = {
     dao.update(
-      MongoDBObject("_id" -> oid),
+      MongoDBObject(
+        "_id" -> oid,
+        "from" -> userId
+      ),
       MongoDBObject(
         "$set" -> MongoDBObject(
           "key" -> key,
@@ -118,20 +137,20 @@ class MessageDao @Inject()(
   }
 
   def markRead(oid: ObjectId, chatId: Int) = {
-    findById(oid).map(message =>
+    findNonReadById(oid).orElse(findNonDeliveredById(oid)).map(message =>
       dao.update(
         MongoDBObject(
           "_id" -> oid,
           "chat_id" -> chatId
         ),
-        message.copy(timestampRead = Some(MessageTime())),
+        message.copy(timestampRead = Some(MessageTime()), timestampDelivery = Some(MessageTime())),
         upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
       )
     )
   }
 
   def markDelivery(oid: ObjectId, chatId: Int) = {
-    findById(oid).map(message =>
+    findNonDeliveredById(oid).map(message =>
       dao.update(
         MongoDBObject(
           "_id" -> oid,

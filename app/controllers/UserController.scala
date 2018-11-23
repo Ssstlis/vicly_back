@@ -1,17 +1,14 @@
 package controllers
 
-import scala.collection.immutable
-
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
-import models.{Group, Message, User}
+import models.User
 import models.json.UserJson._
 import pdi.jwt.JwtJson
 import play.api.libs.json.{Json, __}
 import play.api.mvc.InjectedController
 import services._
 import utils.CollectionHelper.TraversableOnceHelper
-import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class UserController @Inject()(
@@ -89,7 +86,15 @@ class UserController @Inject()(
         }.getOrElse(0L, None)
         (user, unread, lastO)
       }
-      groupId -> usersWithMessages
+      val groupChatMap = (for {
+        groupId <- request.user.groupId
+        chats = chatService.findGroupChatByGroupId(groupId)
+      } yield {
+        chats.map(chat =>
+          chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id))
+        ).toMap
+      }).getOrElse(Map.empty)
+      groupId -> (usersWithMessages, groupChatMap)
     }.toMap.seq
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))

@@ -14,15 +14,17 @@ class ChatService @Inject()(chatDao: ChatDao) {
 
   def findGroupChats(userId: Int) = chatDao.findGroupChats(userId)
 
+  def findGroupChatByGroupId(groupId: Int) = chatDao.findGroupChatByGroupId(groupId)
+
   def findUserChat(first: Int, second: Int) = chatDao.findUserChat(first, second)
 
-  def findUserChat(userId: Int) = chatDao.findUserChat(userId)
+  def findUserChatByUserId(userId: Int) = chatDao.findUserChat(userId)
 
   def createUserChat(first: Int, second: Int, groupId: Int) = chatDao.createUserChat(first, second, groupId)
 
   def createGroupChat(userIds: List[Int], groupId: Int) = chatDao.createGroupChat(userIds, groupId)
 
-  def findGroupChat(id: Int) = chatDao.findGroupChat(id)
+  def findGroupChat(id: Int, groupId: Int) = chatDao.findGroupChat(id, groupId)
 
   def findByChatAndGroupId(chatId: Int, groupId: Int) = chatDao.findByChatAndGroupId(chatId, groupId)
 }
