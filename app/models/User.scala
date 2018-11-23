@@ -33,6 +33,12 @@ case class User(
       "last_activity" -> lastActivity
     )
   }
+
+  val claim = Json.obj(
+    "user_id" -> _id,
+    "login" -> login,
+    "password" -> password
+  )
 }
 
 trait UserJson {

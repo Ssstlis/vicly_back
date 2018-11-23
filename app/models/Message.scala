@@ -11,6 +11,7 @@ case class Message(
   from: Int,
   key: String,
   text: String,
+  deleted: Boolean,
   @Key("reply_for") replyForO: Option[ObjectId],
   @Key("chat_id") chatId: Int,
   @Key("timestamp_post") timestampPost: MessageTime,
@@ -45,6 +46,7 @@ trait MessageJson {
     Reads.pure(from) and
     ((__ \ "key").read[String] orElse Reads.pure("")) and
     (__ \ "message").read[String] and
+    Reads.pure(true) and
     (__ \ "reply_for").readNullable[ObjectId] and
     (__ \ "id").read[Int] and
     Reads.pure(MessageTime()) and

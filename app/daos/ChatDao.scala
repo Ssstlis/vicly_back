@@ -78,4 +78,11 @@ class ChatDao @Inject()(
       "chat_type" -> "group"
     ))
   }
+
+  def findByChatAndGroupId(chatId: Int, groupId: Int) = {
+    dao.findOne(MongoDBObject(
+      "chat_id" -> chatId,
+      "group_id" -> groupId
+    ))
+  }
 }

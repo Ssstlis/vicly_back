@@ -69,11 +69,67 @@ class MessageController @Inject()(
     Ok(Json.toJson(messages))
   }
 
-  def readMessage(id: String) = authUtils.authenticateAction { _ =>
-    if (ObjectId.isValid(id) && messageService.markRead(new ObjectId(id)).exists(_.wasAcknowledged())) Ok else BadRequest
+  def readMessage = authUtils.authenticateAction(parse.json) { request =>
+    val json = request.body
+    val user = request.user
+
+    (for {
+      groupId <- user.groupId
+      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      oid = new ObjectId(id)
+      chatId <- (json \ "chat_id").asOpt[Int]
+      _ <- chatService.findById(chatId)
+      result <- messageService.read(oid, chatId) if result.isUpdateOfExisting
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
   }
 
-  def deliveryMessage(id: String) = authUtils.authenticateAction { _ =>
-    if (ObjectId.isValid(id) && messageService.markDelivery(new ObjectId(id)).exists(_.wasAcknowledged())) Ok else BadRequest
+  def deliveryMessage = authUtils.authenticateAction(parse.json) { request =>
+    val json = request.body
+    val user = request.user
+
+    (for {
+      groupId <- user.groupId
+      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      oid = new ObjectId(id)
+      chatId <- (json \ "chat_id").asOpt[Int]
+      _ <- chatService.findById(chatId)
+      result <- messageService.delivery(oid, chatId) if result.isUpdateOfExisting
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
+  }
+
+  def change = authUtils.authenticateAction(parse.json) { request =>
+    val json = request.body
+
+    (for {
+      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      oid = new ObjectId(id)
+      key <- (json \ "key").asOpt[String].orElse(Some(""))
+      text <- (json \ "message").asOpt[String]
+      message <- messageService.findByObjectId(oid) if message.from == request.user.id
+      if messageService.change(oid, key, text).isUpdateOfExisting
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
+  }
+
+  def delete = authUtils.authenticateAction(parse.json) { request =>
+    val json = request.body
+
+    (for {
+      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      mode@(0 | 1) <- (json \ "mode").asOpt[Int]
+      oid = new ObjectId(id)
+      message <- messageService.findByObjectId(oid) if message.from == request.user.id
+      if (mode match {
+        case 0 => messageService.softDelete(oid)
+        case 1 => messageService.remove(oid)
+      }).isUpdateOfExisting
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
   }
 }

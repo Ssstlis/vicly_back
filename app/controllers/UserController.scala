@@ -1,21 +1,22 @@
 package controllers
 
+import scala.collection.immutable
+
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
-import models.User
+import models.{Group, Message, User}
 import models.json.UserJson._
 import pdi.jwt.JwtJson
-import play.api.libs.json.Json
-import play.api.libs.json.__
+import play.api.libs.json.{Json, __}
 import play.api.mvc.InjectedController
 import services._
 import utils.CollectionHelper.TraversableOnceHelper
 import utils.JsonHelper.ObjectIdFormat
-import utils.Helper.StringExtended
 
 @Singleton
 class UserController @Inject()(
   authUtils: AuthUtils,
+  chatService: ChatService,
   config: ConfigService,
   groupService: GroupService,
   inviteService: InviteService,
@@ -40,12 +41,8 @@ class UserController @Inject()(
     } yield {
       userService.setActive(user)
       userService.updateActivity(user.id)
-      val claim = Json.obj(
-        "user_id" -> user._id,
-        "login" -> user.login,
-        "password" -> user.password
-      )
-      val token = JwtJson.encode(claim, config.secret_key, config.algo)
+
+      val token = JwtJson.encode(user.claim, config.secret_key, config.algo)
       Ok(Json.toJson(user)(User.writesWithToken(token)))
     }).getOrElse(BadRequest)
   }
@@ -56,7 +53,7 @@ class UserController @Inject()(
     Ok.withHeaders()
   }
 
-  def list = authUtils.authenticateAction {
+  def list = authUtils.authenticateAction { request =>
     val groups = groupService.all.zipBy(_.id)
 
     val users = userService.all.map {
@@ -84,7 +81,16 @@ class UserController @Inject()(
       case _ => List.empty[User]
     }.toList
 
-    val withGroups = usersWithGroup.collect { case Right((groupId, users)) => groupId -> users.seq }.toMap.seq
+    val withGroups = usersWithGroup.collect { case Right((groupId, users)) =>
+      val usersWithMessages = users.seq.map { user =>
+        val (unread, lastO) = chatService.findUserChat(request.user.id, user.id).map { chat =>
+          messageService.findUnreadMessagesCount(chat.id, request.user.id) ->
+          messageService.findLastMessage(chat.id, request.user.id)
+        }.getOrElse(0L, None)
+        (user, unread, lastO)
+      }
+      groupId -> usersWithMessages
+    }.toMap.seq
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))
   }
@@ -97,12 +103,8 @@ class UserController @Inject()(
       userService.findByLoginAndPassword(user.login, password).map { user =>
         userService.setActive(user)
         userService.updateActivity(user.id)
-        val claim = Json.obj(
-          "user_id" -> user._id,
-          "login" -> user.login,
-          "password" -> user.password
-        )
-        val token = JwtJson.encode(claim, config.secret_key, config.algo)
+
+        val token = JwtJson.encode(user.claim, config.secret_key, config.algo)
         Ok(Json.toJson(user)(User.writesWithToken(token)))
       }.getOrElse(BadRequest)
     } else {
