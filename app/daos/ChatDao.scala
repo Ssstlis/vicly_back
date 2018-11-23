@@ -36,15 +36,18 @@ class ChatDao @Inject()(
     dao.findOne(MongoDBObject("id" -> id))
   }
 
-  def findUserGroupChats(userId: Int) = {
+  def findGroupChats(userId: Int) = {
     dao.find(MongoDBObject("user_ids" -> userId)).toList
   }
 
   def findUserChat(first: Int, second: Int) = {
     dao.findOne(MongoDBObject(
       "$and" -> MongoDBList(
-        "user_ids" -> MongoDBList(first, second),
-        "user_ids" -> MongoDBObject("$size" -> 2)
+        "user_ids" -> MongoDBObject("$all" -> MongoDBList(first, second)),
+        "$or" -> MongoDBList(
+          "user_ids" -> MongoDBObject("$size" -> 2),
+          "chat_type" -> "user"
+        )
       )
     ))
   }
@@ -52,13 +55,27 @@ class ChatDao @Inject()(
   def findUserChat(userId: Int) = {
     dao.findOne(MongoDBObject(
       "$and" -> MongoDBList(
-        "user_ids" -> userId,
-        "user_ids" -> MongoDBObject("$size" -> 2)
+        "user_ids" -> MongoDBObject("$all" -> MongoDBList(userId)),
+        "$or" -> MongoDBList(
+          "user_ids" -> MongoDBObject("$size" -> 2),
+          "chat_type" -> "user"
+        )
       )
     ))
   }
 
-  def createChat(first: Int, second: Int, groupId: Int) = {
-    dao.insert(Chat(maxId + 1, groupId, List(first, second))).isDefined
+  def createUserChat(first: Int, second: Int, groupId: Int) = {
+    dao.insert(Chat(maxId + 1, groupId, List(first, second), "user")).isDefined
+  }
+
+  def createGroupChat(userIds: List[Int], groupId: Int) = {
+    dao.insert(Chat(maxId + 1, groupId, userIds, "group")).isDefined
+  }
+
+  def findGroupChat(id: Int) = {
+    dao.findOne(MongoDBObject(
+      "id" -> id,
+      "chat_type" -> "group"
+    ))
   }
 }

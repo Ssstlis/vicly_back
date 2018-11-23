@@ -1,6 +1,7 @@
 package daos
 
 import com.google.inject.{Inject, Singleton}
+import com.mongodb.WriteConcern
 import com.mongodb.casbah.commons.MongoDBObject
 import models.{Message, MessageTime}
 import org.bson.types.ObjectId
@@ -26,27 +27,40 @@ class MessageDao @Inject()(
     dao.find(MongoDBObject.empty).toList
   }
 
-  def findByChatId(chatId: Int) = {
+  def findById(id: ObjectId) = {
+    dao.findOne(MongoDBObject("_id" -> id))
+  }
+
+  def findByChatId(chatId: Int, page: Int) = {
     dao.find(MongoDBObject(
       "chat_id" -> chatId
-    )).toList
+    )).skip(page * 20).limit(20).toList
   }
 
   def markRead(id: ObjectId) = {
-    dao.update(
-      MongoDBObject("_id" -> id),
-      MongoDBObject("$set" -> MongoDBObject(
-        "timestamp_read" -> MessageTime()
-      ))
+    findById(id).map(message =>
+      dao.update(
+        MongoDBObject("_id" -> id),
+        message.copy(timestampRead = Some(MessageTime())),
+        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
+      )
     )
   }
 
   def markDelivery(id: ObjectId) = {
-    dao.update(
-      MongoDBObject("_id" -> id),
-      MongoDBObject("$set" -> MongoDBObject(
-        "timestamp_delivery" -> MessageTime()
-      ))
+    findById(id).map(message =>
+      dao.update(
+        MongoDBObject("_id" -> id),
+        message.copy(timestampDelivery = Some(MessageTime())),
+        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
+      )
     )
+  }
+
+  def findUnreadMessages(id: Int) = {
+    dao.find(MongoDBObject(
+      "chat_id" -> id,
+      "timestamp_read" -> MongoDBObject("$exists" -> 0)
+    )).toList
   }
 }

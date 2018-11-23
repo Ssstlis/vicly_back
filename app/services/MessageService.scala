@@ -12,7 +12,7 @@ class MessageService @Inject()(messageDao: MessageDao) {
 
   def save(message: Message) = messageDao.dao.save(message)
 
-  def findByChatId(chatId: Int) = messageDao.findByChatId(chatId)
+  def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int)
 
   def markRead(id: ObjectId) = messageDao.markRead(id)
 

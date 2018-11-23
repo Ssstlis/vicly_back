@@ -23,7 +23,7 @@ class UserService @Inject()(userDao: UserDao) {
 
   def setInactive(user: User) = userDao.setInactive(user)
 
-  def find(id: ObjectId) = userDao.findOneById(id)
+  def find(id: ObjectId, login: String, password: String) = userDao.find(id, login, password)
 
   def findByLogin(login: String) = userDao.findByLogin(login)
 
@@ -32,4 +32,8 @@ class UserService @Inject()(userDao: UserDao) {
   def all = userDao.all
 
   def save(user: User) = userDao.save(user)
+
+  def updateActivity(id: Int) = userDao.updateActivity(id)
+
+  def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password)
 }

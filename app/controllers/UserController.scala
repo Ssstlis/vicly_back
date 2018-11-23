@@ -6,10 +6,12 @@ import models.User
 import models.json.UserJson._
 import pdi.jwt.JwtJson
 import play.api.libs.json.Json
+import play.api.libs.json.__
 import play.api.mvc.InjectedController
 import services._
 import utils.CollectionHelper.TraversableOnceHelper
 import utils.JsonHelper.ObjectIdFormat
+import utils.Helper.StringExtended
 
 @Singleton
 class UserController @Inject()(
@@ -37,7 +39,12 @@ class UserController @Inject()(
       user <- userService.findByLoginAndPassword(login, password)
     } yield {
       userService.setActive(user)
-      val claim = Json.obj("user_id" -> user._id)
+      userService.updateActivity(user.id)
+      val claim = Json.obj(
+        "user_id" -> user._id,
+        "login" -> user.login,
+        "password" -> user.password
+      )
       val token = JwtJson.encode(claim, config.secret_key, config.algo)
       Ok(Json.toJson(user)(User.writesWithToken(token)))
     }).getOrElse(BadRequest)
@@ -80,5 +87,13 @@ class UserController @Inject()(
     val withGroups = usersWithGroup.collect { case Right((groupId, users)) => groupId -> users.seq }.toMap.seq
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))
+  }
+
+  def updatePassword = authUtils.authenticateAction(parse.json((__ \ "password").read[String])) { request =>
+    if (userService.updatePassword(request.user.id, request.body).isUpdateOfExisting) {
+      Ok
+    } else {
+      BadRequest
+    }
   }
 }

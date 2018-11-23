@@ -3,6 +3,7 @@ POST        /api/user/login                         controllers.UserController.l
 GET         /api/user/logout                        controllers.UserController.logout
 POST        /api/user/signup                        controllers.UserController.signup
 GET         /api/user/list                          controllers.UserController.list
+POST        /api/user/update_password               controllers.UserController.updatePassword
 
 #Invite
 POST        /api/invite                             controllers.InviteController.create(group_id: Option[Int])
@@ -17,6 +18,6 @@ POST        /api/group/set_purpose                  controllers.GroupController.
 
 #Messages
 POST        /api/message/post                       controllers.MessageController.postMessage
-GET         /api/message/chat/:id/:chat_type        controllers.MessageController.chatMessages(id: Int, chat_type: String)
+GET         /api/message/chat/:id/:chat_type        controllers.MessageController.chatMessages(id: Int, chat_type: String, page: Int = 0)
 GET         /api/message/read/:id                   controllers.MessageController.readMessage(id: String)
 GET         /api/message/delivery/:id               controllers.MessageController.deliveryMessage(id: String)

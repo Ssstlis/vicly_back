@@ -49,7 +49,10 @@ class InviteController @Inject()(
   }
 
   def one(uuid: String) = Action {
-    inviteService.find(uuid).map(invite => Ok(Json.toJson(invite))).getOrElse(BadRequest)
+    inviteService.find(uuid).map { invite =>
+      val groupNameO = groupService.findById(invite.groupId).map(_.name)
+      Ok(Json.toJson(invite)(Invite.writesWithGroupName(groupNameO)))
+    }.getOrElse(BadRequest)
   }
 
   def list = Action {

@@ -17,7 +17,7 @@ class UserDao @Inject()(
 
   import mongoContext._
 
-  val dao = new SalatDAO[User, ObjectId](playSalat.collection("user", "ms")){}
+  val dao = new SalatDAO[User, ObjectId](playSalat.collection("user", "ms")) {}
 
   {
     dao.find(MongoDBObject.empty).toList.foreach { user =>
@@ -40,6 +40,15 @@ class UserDao @Inject()(
 
   def findOne(id: Int) = {
     dao.findOne(MongoDBObject("id" -> id))
+  }
+
+  def find(id: ObjectId, login: String, password: String) = {
+    dao.findOne(MongoDBObject(
+      "_id" -> id,
+      "login" -> login,
+      "password" -> password,
+      "active" -> true
+    ))
   }
 
   def all = findAll().toList
@@ -69,5 +78,27 @@ class UserDao @Inject()(
     dao.findOne(MongoDBObject(
       "login" -> login
     ))
+  }
+
+  def updateActivity(id: Int) = {
+    dao.update(
+      MongoDBObject("id" -> id),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "last_activity" -> (System.currentTimeMillis() / 1000).toInt
+        )
+      )
+    )
+  }
+
+  def updatePassword(id: Int, password: String) = {
+    dao.update(
+      MongoDBObject("id" -> id),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "password" -> password.md5.md5.md5
+        )
+      )
+    )
   }
 }

@@ -17,29 +17,32 @@ case class User(
   login: String,
   active: Boolean,
   @Key("join_time") joinTime: Int,
-  id: Int
-)
-
-trait UserJson {
-  private def toJson(u: User) = {
+  id: Int,
+  @Key("last_activity") lastActivity: Int = 0
+) {
+  def toJson = {
     Json.obj(
-      "_id" -> u._id,
-      "id" -> u.id,
-      "first_name" -> u.firstName,
-      "last_name" -> u.lastName,
-      "group_id" -> u.groupId,
-      "login" -> u.login,
-      "is_active" -> u.active,
-      "join_time" -> u.joinTime,
+      "_id" -> _id,
+      "id" -> id,
+      "first_name" -> firstName,
+      "last_name" -> lastName,
+      "group_id" -> groupId,
+      "login" -> login,
+      "is_active" -> active,
+      "join_time" -> joinTime,
+      "last_activity" -> lastActivity
     )
   }
+}
+
+trait UserJson {
 
   implicit val writes: Writes[User] = (u: User) => {
-    toJson(u)
+    u.toJson
   }
 
   def writesWithToken(token: String): Writes[User] = (u: User) => {
-    toJson(u) + ("token" -> Json.toJson(token))
+    u.toJson + ("token" -> Json.toJson(token))
   }
 
   def reads(id: => Int): Reads[User] = (
@@ -51,7 +54,8 @@ trait UserJson {
     (__ \ "login").read[String] and
     Reads.pure(true) and
     Reads.pure(DateTime.now.timestamp) and
-    Reads.pure(id)
+    Reads.pure(id) and
+    Reads.pure((System.currentTimeMillis() / 1000).toInt)
   )(User.apply _)
 }
 

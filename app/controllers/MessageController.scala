@@ -49,36 +49,31 @@ class MessageController @Inject()(
             BadRequest
           }
         }
-        case "group" => {
-          chatService.findById(message.chatId).map { chat =>
-            if (messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()) {
-              Ok
-            } else {
-              BadRequest
-            }
+        case "group" =>
+          chatService.findGroupChat(message.chatId).collect {
+            case chat if messageService.save(message.copy(chatId = chat.id)).wasAcknowledged() => Ok
           }.getOrElse(BadRequest)
-        }
       }
     }).getOrElse(BadRequest)
   }
 
-  def chatMessages(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
+  def chatMessages(chatId: Int, chatType: String, page: Int) = authUtils.authenticateAction { request =>
     val user = request.user
     val messages = (chatType match {
       case "user" => chatService.findUserChat(user.id)
       case "group" => chatService.findById(chatId)
       case _ => None
     }).map { chat =>
-      messageService.findByChatId(chat.id)
+      messageService.findByChatId(chat.id, page)
     }.getOrElse(List.empty)
     Ok(Json.toJson(messages))
   }
 
   def readMessage(id: String) = authUtils.authenticateAction { _ =>
-    if (ObjectId.isValid(id) && messageService.markRead(new ObjectId(id)).isUpdateOfExisting) Ok else BadRequest
+    if (ObjectId.isValid(id) && messageService.markRead(new ObjectId(id)).exists(_.wasAcknowledged())) Ok else BadRequest
   }
 
   def deliveryMessage(id: String) = authUtils.authenticateAction { _ =>
-    if (ObjectId.isValid(id) && messageService.markDelivery(new ObjectId(id)).isUpdateOfExisting) Ok else BadRequest
+    if (ObjectId.isValid(id) && messageService.markDelivery(new ObjectId(id)).exists(_.wasAcknowledged())) Ok else BadRequest
   }
 }

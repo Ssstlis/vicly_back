@@ -6,7 +6,8 @@ import salat.annotations.Key
 case class Chat(
   id: Int,
   @Key("group_id") groupId: Int,
-  @Key("user_ids") userIds: List[Int]
+  @Key("user_ids") userIds: List[Int],
+  @Key("chat_type") chatType: String
 )
 
 trait ChatJson {

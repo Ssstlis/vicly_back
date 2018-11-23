@@ -43,8 +43,11 @@ class AuthUtils @Inject()(
         token <- request.headers.get("Authorization")
         json <- decodeToken(token)
         userId <- (json \ "user_id").asOpt[ObjectId]
-        user <- userService.find(userId)
+        login <- (json \ "login").asOpt[String]
+        password <- (json \ "password").asOpt[String]
+        user <- userService.find(userId, login, password)
       } yield {
+        userService.updateActivity(user.id)
         block(UserRequest(user, request))
       }).getOrElse(Future.successful(Results.Forbidden))
     }
