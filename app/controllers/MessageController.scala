@@ -26,30 +26,34 @@ class MessageController @Inject()(
     } yield {
       chatType match {
         case "user" => {
-          chatService.findUserChat(user.id, targetUserId).map { chat =>
-            if (
-              userService.findOne(message.chatId).isDefined &&
-              messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()
-            ) {
-              Ok
-            } else {
-              ResetContent
+          if (userService.findByIdNonArchive(message.chatId).isEmpty) {
+            chatService.findUserChat(user.id, targetUserId).map { chat =>
+              if (
+                userService.findOne(message.chatId).isDefined &&
+                messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()
+              ) {
+                Ok
+              } else {
+                ResetContent
+              }
+            }.getOrElse {
+              if (
+                userService.findOne(targetUserId).isDefined &&
+                chatService.createUserChat(user.id, targetUserId, groupId)
+              ) {
+                chatService.findUserChat(user.id, targetUserId).map { chat =>
+                  if (messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()) {
+                    Ok
+                  } else {
+                    BadRequest
+                  }
+                }.getOrElse(BadRequest)
+              } else {
+                BadRequest
+              }
             }
-          }.getOrElse {
-            if (
-              userService.findOne(targetUserId).isDefined &&
-              chatService.createUserChat(user.id, targetUserId, groupId)
-            ) {
-              chatService.findUserChat(user.id, targetUserId).map { chat =>
-                if (messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()) {
-                  Ok
-                } else {
-                  BadRequest
-                }
-              }.getOrElse(BadRequest)
-            } else {
-              BadRequest
-            }
+          } else {
+            BadRequest
           }
         }
         case "group" =>

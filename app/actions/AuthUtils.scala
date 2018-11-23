@@ -19,6 +19,7 @@ class AuthUtils @Inject()(
 
   abstract class AbstractActionBuilder[T[_]] extends ActionBuilder[T, AnyContent] {
     override protected def executionContext = ec
+
     override def parser = defaultParser
   }
 

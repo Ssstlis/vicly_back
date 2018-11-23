@@ -18,7 +18,9 @@ case class User(
   active: Boolean,
   @Key("join_time") joinTime: Int,
   id: Int,
-  @Key("last_activity") lastActivity: Int = 0
+  @Key("last_activity") lastActivity: Int = 0,
+  archive: Boolean = false
+
 ) {
   def toJson = {
     Json.obj(
@@ -30,7 +32,8 @@ case class User(
       "login" -> login,
       "is_active" -> active,
       "join_time" -> joinTime,
-      "last_activity" -> lastActivity
+      "last_activity" -> lastActivity,
+      "archive" -> archive
     )
   }
 
@@ -61,7 +64,8 @@ trait UserJson {
     Reads.pure(true) and
     Reads.pure(DateTime.now.timestamp) and
     Reads.pure(id) and
-    Reads.pure((System.currentTimeMillis() / 1000).toInt)
+    Reads.pure((System.currentTimeMillis() / 1000).toInt) and
+    Reads.pure(false)
   )(User.apply _)
 }
 
