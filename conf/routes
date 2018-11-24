@@ -5,6 +5,9 @@ POST        /api/user/signup                               controllers.UserContr
 GET         /api/user/list                                 controllers.UserController.list
 POST        /api/user/update_password                      controllers.UserController.updatePassword
 GET         /api/user/archive                              controllers.UserController.archive(userId: Option[Int])
+GET         /api/user/set_status/:status                   controllers.UserController.setStatus(status: String)
+GET         /api/user/clear_status                         controllers.UserController.removeStatus
+GET         /api/user/remove_avatar                        controllers.UserController.removeAvatar
 
 #Invite
 POST        /api/invite                                    controllers.InviteController.create(group_id: Option[Int])
@@ -35,3 +38,7 @@ POST        /api/chat/archive                              controllers.ChatContr
 
 #WebSocket
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)
+
+#Attachments
+POST        /api/attachments/upload                        controllers.AttachmentController.upload(is_avatar: Boolean = false)
+GET         /api/attachments/download/:uuid                controllers.AttachmentController.download(uuid: String)

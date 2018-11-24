@@ -118,9 +118,8 @@ class UserController @Inject()(
     val userId = userIdO.getOrElse(user.id)
 
     if (userId == user.id) {
-      userService.findByIdNonArchive(userId).collect { case user
-        if userService.archive(userId)(user.groupId).isUpdateOfExisting =>
-        Ok
+      userService.findByIdNonArchive(userId).collect {
+        case user if userService.archive(userId)(user.groupId).isUpdateOfExisting => Ok
       }.getOrElse(BadRequest)
     } else {
       (for {
@@ -132,5 +131,26 @@ class UserController @Inject()(
         Ok
       }).getOrElse(BadRequest)
     }
+  }
+
+  def setStatus(status: String) = authUtils.authenticateAction { request =>
+    val user = request.user
+    user.groupId.collect {
+      case groupId if userService.setStatus(user.id, status)(groupId).isUpdateOfExisting => Ok
+    }.getOrElse(BadRequest)
+  }
+
+  def removeStatus = authUtils.authenticateAction { request =>
+    val user = request.user
+    user.groupId.collect {
+      case groupId if userService.removeStatus(user.id)(groupId).isUpdateOfExisting => Ok
+    }.getOrElse(BadRequest)
+  }
+
+  def removeAvatar = authUtils.authenticateAction { request =>
+    val user = request.user
+    user.groupId.collect {
+      case groupId if userService.removeAvatar(user.id)(groupId).isUpdateOfExisting => Ok
+    }.getOrElse(BadRequest)
   }
 }

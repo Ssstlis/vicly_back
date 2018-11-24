@@ -46,10 +46,6 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
     push(0, groupId, json)
   }
 
-  def activity(groupIdO: Option[Int], userId: Int) = {
-    push(10, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
-  }
-
   def online(groupIdO: Option[Int], userId: Int) = {
     push(11, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
   }
@@ -93,5 +89,29 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
 
   def archiveChat(groupId: Int, chatId: Int) = {
     push(24, groupId, Json.obj("chat_id" -> chatId))
+  }
+
+  def userSetStatus(groupId: Int, userId: Int, status: String) = {
+    val json = Json.obj(
+      "user_id" -> userId,
+      "status" -> status
+    )
+    push(30, groupId, json)
+  }
+
+  def userRemoveStatus(groupId: Int, userId: Int) = {
+    push(31, groupId, Json.obj("user_id" -> userId))
+  }
+
+  def userSetAvatar(groupId: Int, userId: Int, uuid: String) = {
+    val json = Json.obj(
+    "user_id" -> userId,
+    "uuid" -> uuid
+  )
+    push(32, groupId, json)
+  }
+
+  def userRemoveAvatar(groupId: Int, userId: Int) = {
+    push(33, groupId, Json.obj("user_id" -> userId))
   }
 }

@@ -136,4 +136,48 @@ class UserDao @Inject()(
       "archive" -> false
     )).toList
   }
+
+  def setStatus(userId: Int, status: String) = {
+    dao.update(
+      MongoDBObject("user_id" -> userId),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+        "status" -> status
+        )
+      )
+    )
+  }
+
+  def removeStatus(userId: Int) = {
+    dao.update(
+      MongoDBObject("user_id" -> userId),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "status" -> ""
+        )
+      )
+    )
+  }
+
+  def setAvatar(userId: Int, uuid: String) = {
+    dao.update(
+      MongoDBObject("user_id" -> userId),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "avatar" -> uuid
+        )
+      )
+    )
+  }
+
+  def removeAvatar(userId: Int) = {
+    dao.update(
+      MongoDBObject("user_id" -> userId),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "avatar" -> ""
+        )
+      )
+    )
+  }
 }

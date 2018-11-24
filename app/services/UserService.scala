@@ -37,7 +37,7 @@ class UserService @Inject()(
   def save(user: User) = userDao.save(user)
 
   def updateActivity(id: Int)(groupIdO: Option[Int]) = {
-    socketNotificationService.activity(groupIdO, id)
+    socketNotificationService.online(groupIdO, id)
     userDao.updateActivity(id)
   }
 
@@ -56,4 +56,28 @@ class UserService @Inject()(
   }
 
   def findAllPossiblyOfflined = userDao.findAllPossiblyOfflined
+
+  def setStatus(userId: Int, status: String)(groupId: Int) = {
+    val result = userDao.setStatus(userId, status)
+    if (result.isUpdateOfExisting) socketNotificationService.userSetStatus(groupId, userId, status)
+    result
+  }
+
+  def removeStatus(userId: Int)(groupId: Int) = {
+    val result = userDao.removeStatus(userId)
+    if (result.isUpdateOfExisting) socketNotificationService.userRemoveStatus(groupId, userId)
+    result
+  }
+
+  def setAvatar(userId: Int, uuid: String)(groupId: Int) = {
+    val result = userDao.setAvatar(userId, uuid)
+    if (result.isUpdateOfExisting) socketNotificationService.userSetAvatar(groupId, userId, uuid)
+    result
+  }
+
+  def removeAvatar(userId: Int)(groupId: Int) = {
+    val result = userDao.removeAvatar(userId)
+    if (result.isUpdateOfExisting) socketNotificationService.userRemoveAvatar(groupId, userId)
+    result
+  }
 }
