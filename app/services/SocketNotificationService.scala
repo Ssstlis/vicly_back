@@ -2,7 +2,9 @@ package services
 
 import com.google.inject.{Inject, Singleton}
 import models.{Chat, Message}
+import org.bson.types.ObjectId
 import play.api.libs.json.{JsValue, Json}
+import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class SocketNotificationService @Inject()(subscriberService: SubscriberService) {
@@ -16,15 +18,25 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
     )
   }
 
-  def markRead(groupId: Int, jsValue: JsValue) = push(5, groupId, jsValue)
+  def markRead(groupId: Int, id: ObjectId) = {
+    push(5, groupId, Json.obj("id" -> id))
+  }
 
-  def markDelivery(groupId: Int, jsValue: JsValue) = push(4, groupId, jsValue)
+  def markDelivery(groupId: Int, id: ObjectId) = {
+    push(4, groupId, Json.obj("id" -> id))
+  }
 
-  def changed(groupId: Int, jsValue: JsValue) = push(3, groupId, jsValue)
+  def changed(groupId: Int, id: ObjectId) = {
+    push(3, groupId, Json.obj("id" -> id))
+  }
 
-  def softDelete(groupId: Int, jsValue: JsValue) = push(2, groupId, jsValue)
+  def softDelete(groupId: Int, id: ObjectId) = {
+    push(2, groupId, Json.obj("id" -> id))
+  }
 
-  def remove(groupId: Int, jsValue: JsValue) = push(1, groupId, jsValue)
+  def remove(groupId: Int, id: ObjectId) = {
+    push(1, groupId, Json.obj("id" -> id))
+  }
 
   def newMessage(groupId: Int, chatType: String, message: Message, chat: Chat) = {
     val json = Json.obj(

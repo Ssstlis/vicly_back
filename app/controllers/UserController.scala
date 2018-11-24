@@ -83,7 +83,7 @@ class UserController @Inject()(
       val usersWithMessages = users.seq.map { user =>
         val (unread, lastO) = chatService.findUserChat(request.user.id, user.id).map { chat =>
           messageService.findUnreadMessagesCount(chat.id, request.user.id) ->
-            messageService.findLastMessage(chat.id, request.user.id)
+            messageService.findLastMessage(chat.id)
         }.getOrElse(0L, None)
         (user, unread, lastO)
       }

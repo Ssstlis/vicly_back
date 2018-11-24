@@ -3,6 +3,7 @@ package actors
 import akka.actor.{Actor, ActorRef, Props}
 import models.User
 import play.api.Logger
+import play.api.libs.json.Json
 import services.{SocketNotificationService, SubscriberService}
 
 object WsActor {
@@ -24,7 +25,7 @@ class WsActor(
   import WsActor._
 
   override def receive: Receive = {
-    case _ => ()
+    case _ => subscriber ! Json.obj()
   }
 
   override def postStop(): Unit = {

@@ -28,10 +28,10 @@ class MessageController @Inject()(
       val replyForO = (request.body \ "reply_for").asOpt[ObjectId]
       chatType match {
         case "user" => {
-          if (userService.findByIdNonArchive(message.chatId).isDefined) {
+          if (userService.findByIdNonArchive(targetUserId).isDefined) {
             chatService.findUserChat(user.id, targetUserId).map { chat =>
               if (
-                userService.findOne(message.chatId).isDefined && {
+                userService.findOne(targetUserId).isDefined && {
                   val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
                   messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
                 }
@@ -89,7 +89,7 @@ class MessageController @Inject()(
       case "group" => chatService.findById(chatId)
       case _ => None
     }).map { chat =>
-      messageService.findUnreadMessages(chat.id)
+      messageService.findUnreadMessages(chat.id, user.id)
     }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
     Ok(Json.toJson(messages))
   }
@@ -103,16 +103,16 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chatId <- (json \ "chat_id").asOpt[Int]
-      _ <- (request.body \ "chat_type").asOpt[String].map {
+      _ <- (json \ "chat_type").asOpt[String].map {
         case "user" => {
-          messageService.findChatIdByObjectId(oid).flatMap(chatId =>
+          messageService.findChatIdByObjectId(oid).flatMap { chatId =>
             chatService.findById(chatId)
-          )
+          }
         }
         case "group" => chatService.findGroupChat(chatId, groupId)
         case _ => None
       }
-      result <- messageService.read(oid, chatId)(groupId) if result.isUpdateOfExisting
+      result <- messageService.read(oid)(groupId) if result.isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
@@ -127,7 +127,7 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chatId <- (json \ "chat_id").asOpt[Int]
-      _ <- (request.body \ "chat_type").asOpt[String].map {
+      _ <- (json \ "chat_type").asOpt[String].map {
         case "user" => {
           messageService.findChatIdByObjectId(oid).flatMap(chatId =>
             chatService.findById(chatId)

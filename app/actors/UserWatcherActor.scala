@@ -24,9 +24,10 @@ class UserWatcherActor @Inject()(
   override def receive: Receive = {
     case Watch => {
       userService.findAllPossiblyOfflined.groupBy(_.groupId).foreach { case (groupIdO, user) =>
-        user.foreach(user =>
+        user.foreach { user =>
+          userService.setInactive(user)
           socketNotificationService.offline(groupIdO, user.id)
-        )
+        }
       }
     }
   }

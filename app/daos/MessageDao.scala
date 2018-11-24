@@ -2,7 +2,7 @@ package daos
 
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.WriteConcern
-import com.mongodb.casbah.commons.{MongoDBList, MongoDBObject}
+import com.mongodb.casbah.commons.MongoDBObject
 import models.{Message, MessageTime}
 import org.bson.types.ObjectId
 import ru.tochkak.plugin.salat.PlaySalat
@@ -31,35 +31,21 @@ class MessageDao @Inject()(
     dao.findOne(MongoDBObject("_id" -> id))
   }
 
-  def findNonDeliveredById(id: ObjectId) = {
-    dao.findOne(MongoDBObject(
-      "_id" -> id,
-      "timestamp_delivery" -> MongoDBObject("$exists" -> 0)
-    ))
-  }
-
-  def findNonReadById(id: ObjectId) = {
-    dao.findOne(MongoDBObject(
-      "_id" -> id,
-      "timestamp_read" -> MongoDBObject("$exists" -> 0)
-    ))
-  }
-
   def findByChatId(chatId: Int, page: Int) = {
     dao.find(MongoDBObject(
       "chat_id" -> chatId
     ))
       .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
-      .skip(page * 20)
-      .limit(20)
+      .skip(page * 100)
+      .limit(100)
       .toList
   }
 
-  def findUnreadMessages(id: Int) = {
+  def findUnreadMessages(id: Int, userId: Int) = {
     dao.find(MongoDBObject(
       "chat_id" -> id,
-      "timestamp_read" -> MongoDBObject("$exists" -> 0)
-    )).toList
+      "from" -> MongoDBObject("$ne" -> userId)
+    )).filter(_.timestampRead.isEmpty).toList
   }
 
   def findChatIdByObjectId(id: ObjectId) = {
@@ -72,45 +58,19 @@ class MessageDao @Inject()(
     dao.count(MongoDBObject(
       "chat_id" -> id,
       "timestamp_read" -> MongoDBObject("$exists" -> 0),
-      "$or" -> MongoDBList(
-        "from" -> MongoDBObject("$ne" -> from),
-        "$and" -> MongoDBList(
-          "from" -> from/*,
-          "deleted" -> false*/
-        )
-      )
+      "from" -> MongoDBObject("$ne" -> from)
     ))
   }
 
   def findUnreadMessagesCount(id: Int) = {
     dao.count(MongoDBObject(
       "chat_id" -> id,
-      "timestamp_read" -> MongoDBObject("$exists" -> 0)/*,
-      "deleted" -> false*/
+      "timestamp_read" -> MongoDBObject("$exists" -> 0)
     ))
-  }
-
-  def findLastMessage(id: Int, from: Int) = {
-    dao.find(MongoDBObject(
-      "chat_id" -> id,
-      "$or" -> MongoDBList(
-        "from" -> MongoDBObject("$ne" -> from),
-        "$and" -> MongoDBList(
-          "from" -> from/*,
-          "deleted" -> false*/
-        )
-      )
-    )).sort(MongoDBObject("timestamp_post.timestamp" -> -1))
-      .limit(1)
-      .toList
-      .headOption
   }
 
   def findLastMessage(id: Int) = {
-    dao.find(MongoDBObject(
-      "chat_id" -> id/*,
-      "deleted" -> false*/
-    ))
+    dao.find(MongoDBObject("chat_id" -> id))
       .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
       .limit(1)
       .toList
@@ -143,13 +103,10 @@ class MessageDao @Inject()(
     )
   }
 
-  def markRead(oid: ObjectId, chatId: Int) = {
-    findNonReadById(oid).orElse(findNonDeliveredById(oid)).map(message =>
+  def markRead(oid: ObjectId) = {
+    findById(oid).map(message =>
       dao.update(
-        MongoDBObject(
-          "_id" -> oid,
-          "chat_id" -> chatId
-        ),
+        MongoDBObject("_id" -> oid),
         message.copy(timestampRead = Some(MessageTime()), timestampDelivery = Some(MessageTime())),
         upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
       )
@@ -157,12 +114,9 @@ class MessageDao @Inject()(
   }
 
   def markDelivery(oid: ObjectId, chatId: Int) = {
-    findNonDeliveredById(oid).map(message =>
+    findById(oid).map(message =>
       dao.update(
-        MongoDBObject(
-          "_id" -> oid,
-          "chat_id" -> chatId
-        ),
+        MongoDBObject("_id" -> oid),
         message.copy(timestampDelivery = Some(MessageTime())),
         upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
       )

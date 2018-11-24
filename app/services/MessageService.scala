@@ -4,8 +4,6 @@ import com.google.inject.{Inject, Singleton}
 import daos.MessageDao
 import models.{Chat, Message}
 import org.bson.types.ObjectId
-import play.api.libs.json.Json
-import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class MessageService @Inject()(
@@ -25,10 +23,10 @@ class MessageService @Inject()(
 
   def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int)
 
-  def read(id: ObjectId, chatId: Int)(groupId: Int) = {
-    val result = messageDao.markRead(id, chatId)
+  def read(id: ObjectId)(groupId: Int) = {
+    val result = messageDao.markRead(id)
     result.foreach(result => if (result.isUpdateOfExisting) {
-      socketNotificationService.markRead(groupId, Json.obj("id" -> id))
+      socketNotificationService.markRead(groupId, id)
     })
     result
   }
@@ -36,42 +34,34 @@ class MessageService @Inject()(
   def delivery(id: ObjectId, chatId: Int)(groupId: Int) = {
     val result = messageDao.markDelivery(id, chatId)
     result.foreach(result => if (result.isUpdateOfExisting) {
-      socketNotificationService.markDelivery(groupId, Json.obj("id" -> id))
+      socketNotificationService.markDelivery(groupId, id)
     })
     result
   }
 
-  def findUnreadMessages(id: Int) = messageDao.findUnreadMessages(id)
+  def findUnreadMessages(id: Int, userId: Int) = messageDao.findUnreadMessages(id, userId)
 
   def findUnreadMessagesCount(id: Int, from: Int) = messageDao.findUnreadMessagesCount(id, from)
 
   def findUnreadMessagesCount(id: Int) = messageDao.findUnreadMessagesCount(id)
 
-  def findLastMessage(id: Int, from: Int) = messageDao.findLastMessage(id, from)
-
   def findLastMessage(id: Int) = messageDao.findLastMessage(id)
 
   def change(id: ObjectId, userId: Int, key: String, text: String)(groupId: Int) = {
     val result = messageDao.change(id, userId, key, text)
-    if (result.isUpdateOfExisting) {
-      socketNotificationService.changed(groupId, Json.obj("id" -> id))
-    }
+    if (result.isUpdateOfExisting) socketNotificationService.changed(groupId, id)
     result
   }
 
   def softDelete(id: ObjectId)(groupId: Int) = {
     val result = messageDao.softDelete(id)
-    if (result.isUpdateOfExisting) {
-      socketNotificationService.softDelete(groupId, Json.obj("id" -> id))
-    }
+    if (result.isUpdateOfExisting) socketNotificationService.softDelete(groupId, id)
     result
   }
 
   def remove(id: ObjectId)(groupId: Int) = {
     val result = messageDao.removeById(id)
-    if (result.isUpdateOfExisting) {
-      socketNotificationService.remove(groupId, Json.obj("id" -> id))
-    }
+    if (result.isUpdateOfExisting) socketNotificationService.remove(groupId, id)
     result
   }
 
