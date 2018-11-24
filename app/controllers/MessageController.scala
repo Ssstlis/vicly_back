@@ -7,6 +7,7 @@ import org.bson.types.ObjectId
 import play.api.libs.json.Json
 import play.api.mvc.InjectedController
 import services.{ChatService, MessageService, UserService}
+import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class MessageController @Inject()(
@@ -22,15 +23,18 @@ class MessageController @Inject()(
       groupId <- user.groupId
       message <- request.body.asOpt(Message.reads(user.id))
       chatType@("user" | "group") <- (request.body \ "type").asOpt[String]
-      targetUserId = message.chatId
     } yield {
+      val targetUserId = message.chatId
+      val replyForO = (request.body \ "reply_for").asOpt[ObjectId]
       chatType match {
         case "user" => {
           if (userService.findByIdNonArchive(message.chatId).isDefined) {
             chatService.findUserChat(user.id, targetUserId).map { chat =>
               if (
-                userService.findOne(message.chatId).isDefined &&
-                messageService.save(message.copy(chatId = chat.id))(groupId, "user", chat).wasAcknowledged()
+                userService.findOne(message.chatId).isDefined && {
+                  val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+                  messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
+                }
               ) {
                 Ok
               } else {
@@ -42,7 +46,10 @@ class MessageController @Inject()(
                 chatService.createUserChat(user.id, targetUserId, groupId)
               ) {
                 chatService.findUserChat(user.id, targetUserId).collect { case chat
-                  if messageService.save(message.copy(chatId = chat.id))(groupId, "user", chat).wasAcknowledged() => Ok
+                  if {
+                    val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+                    messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
+                  } => Ok
                 }.getOrElse(BadRequest)
               } else {
                 BadRequest
@@ -54,7 +61,10 @@ class MessageController @Inject()(
         }
         case "group" =>
           chatService.findGroupChat(targetUserId, groupId).collect { case chat
-            if messageService.save(message.copy(chatId = chat.id))(groupId, "group", chat).wasAcknowledged() => Ok
+            if {
+              val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+              messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
+            } => Ok
           }.getOrElse(BadRequest)
       }
     }).getOrElse(BadRequest)
@@ -93,7 +103,7 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chatId <- (json \ "chat_id").asOpt[Int]
-      _ <- (request.body \ "type").asOpt[String].map {
+      _ <- (request.body \ "chat_type").asOpt[String].map {
         case "user" => {
           messageService.findChatIdByObjectId(oid).flatMap(chatId =>
             chatService.findById(chatId)
@@ -117,7 +127,7 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chatId <- (json \ "chat_id").asOpt[Int]
-      _ <- (request.body \ "type").asOpt[String].map {
+      _ <- (request.body \ "chat_type").asOpt[String].map {
         case "user" => {
           messageService.findChatIdByObjectId(oid).flatMap(chatId =>
             chatService.findById(chatId)

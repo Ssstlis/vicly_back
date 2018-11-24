@@ -75,22 +75,52 @@ class ChatDao @Inject()(
     dao.insert(Chat(maxId + 1, groupId, List(first, second), "user", None, None)).isDefined
   }
 
-  def createGroupChat(userIds: List[Int], groupId: Int, ownerId: ObjectId) = {
-    dao.insert(Chat(maxId + 1, groupId, userIds, "group", None, Some(ownerId))).isDefined
+  def createGroupChat(userIds: List[Int], groupId: Int, ownerId: ObjectId, name: String, purpose: Option[String] = None) = {
+    dao.insert(Chat(maxId + 1, groupId, userIds, "group", Some(false), Some(ownerId), Some(name), purpose)).isDefined
   }
 
   def findGroupChat(id: Int, groupId: Int) = {
     dao.findOne(MongoDBObject(
       "id" -> id,
       "chat_type" -> "group",
-      "group_id" -> groupId
+      "group_id" -> groupId,
+      "archive" -> false
     ))
   }
 
   def findByChatAndGroupId(chatId: Int, groupId: Int) = {
     dao.findOne(MongoDBObject(
       "chat_id" -> chatId,
-      "group_id" -> groupId
+      "group_id" -> groupId,
+      "$or" -> MongoDBList(
+        "$and" -> MongoDBList(
+          "chat_type" -> "group",
+          "archive" -> false,
+        ),
+        "archive" -> false
+      )
     ))
+  }
+
+  def updateUsers(chatId: Int, userIds: List[Int]) = {
+    dao.update(
+      MongoDBObject("id" -> chatId),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "user_ids" -> userIds
+        )
+      )
+    )
+  }
+
+  def archive(chatId: Int) = {
+    dao.update(
+      MongoDBObject("id" -> chatId),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "archive" -> true
+        )
+      )
+    )
   }
 }

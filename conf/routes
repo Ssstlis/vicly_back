@@ -27,7 +27,11 @@ POST        /api/message/delete                            controllers.MessageCo
 POST        /api/message/change                            controllers.MessageController.change
 
 #Chat
-POST        /api/chat/create                               controllers.ChatController.createGroupChat
+POST        /api/chat/create                               controllers.ChatController.create
+POST        /api/chat/typing                               controllers.ChatController.typing
+POST        /api/chat/add                                  controllers.ChatController.add
+POST        /api/chat/remove                               controllers.ChatController.remove
+POST        /api/chat/arcive                               controllers.ChatController.archive
 
 #WebSocket
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)

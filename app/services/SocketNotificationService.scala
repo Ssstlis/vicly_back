@@ -49,4 +49,37 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   def archive(groupIdO: Option[Int], userId: Int) = {
     push(13, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
   }
+
+  def typing(groupId: Int, userId: Int, chatId: Int, chatType: String) = {
+    val json = Json.obj(
+      "user_id" -> userId,
+      "chat_id" -> chatId,
+      "chat_type" -> chatType
+    )
+    push(20, groupId, json)
+  }
+
+  def newGroupChat(groupId: Int, userIds: List[Int]) = {
+    push(21, groupId, Json.toJson(userIds))
+  }
+
+  def newUserInChat(groupId: Int, chatId: Int, userId: Int) = {
+    val json = Json.obj(
+      "chat_id" -> chatId,
+      "user_id" -> userId
+    )
+    push(22, groupId, json)
+  }
+
+  def removeUserInChat(groupId: Int, chatId: Int, userId: Int) = {
+    val json = Json.obj(
+      "chat_id" -> chatId,
+      "user_id" -> userId
+    )
+    push(23, groupId, json)
+  }
+
+  def archiveChat(groupId: Int, chatId: Int) = {
+    push(24, groupId, Json.obj("chat_id" -> chatId))
+  }
 }

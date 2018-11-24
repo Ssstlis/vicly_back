@@ -10,8 +10,11 @@ case class Chat(
   @Key("group_id") groupId: Int,
   @Key("user_ids") userIds: List[Int],
   @Key("chat_type") chatType: String,
-  @Key("archive") archive: Option[Boolean],
-  owner: Option[ObjectId]
+  archive: Option[Boolean] = Some(false),
+  owner: Option[ObjectId] = None,
+  name: Option[String] = None,
+  purpose: Option[String] = None,
+  @Key("private") isPrivate: Boolean = false
 )
 
 trait ChatJson {
@@ -25,7 +28,13 @@ trait ChatJson {
 
     c.chatType match {
       case "user" => json
-      case "group" => json + ("archive" -> Json.toJson(c.archive)) + ("owner" -> Json.toJson(c.owner))
+      case "group" => json ++ Json.obj(
+        "archive" -> c.archive,
+        "owner" -> c.owner,
+        "name" -> c.name,
+        "purpose" -> c.purpose,
+        "private" -> c.isPrivate
+      )
     }
   }
 }
