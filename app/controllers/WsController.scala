@@ -46,7 +46,7 @@ class WsController @Inject()(
         Right {
           logger.info(s"Connect ${user.id} with WS")
           ActorFlow.actorRef { subscriber =>
-            subscriberService.addSubscriber(groupId, subscriber)
+            subscriberService.addSubscriber(groupId, subscriber, user.id)
             WsActor.props(subscriber, user)
           }
         }

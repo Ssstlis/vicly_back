@@ -44,7 +44,7 @@ class ChatController @Inject()(
       chat <- chatService.findGroupChat(chatId, groupId) if !chat.userIds.contains(userId)
       userIds = userId :: chat.userIds if chatService.updateUsers(chatId, userIds).isUpdateOfExisting
     } yield {
-      socketNotificationService.newUserInChat(groupId, chatId, userId)
+      socketNotificationService.newUserInChat(groupId, chat, userId)
       Ok
     }).getOrElse(BadRequest)
   }
@@ -63,7 +63,7 @@ class ChatController @Inject()(
       userIds = chat.userIds.filterNot(_ == userId)
       if chatService.updateUsers(chatId, userIds).isUpdateOfExisting
     } yield {
-      socketNotificationService.removeUserInChat(groupId, chatId, userId)
+      socketNotificationService.removeUserInChat(groupId, chat, userId)
       Ok
     }).getOrElse(BadRequest)
   }
@@ -78,7 +78,7 @@ class ChatController @Inject()(
       chat <- chatService.findGroupChat(chatId, groupId) if chat.owner.contains(user._id)
       if chatService.archive(chatId).isUpdateOfExisting
     } yield {
-      socketNotificationService.archiveChat(groupId, chatId)
+      socketNotificationService.archiveChat(groupId, chat)
       Ok
     }).getOrElse(BadRequest)
   }
@@ -91,12 +91,12 @@ class ChatController @Inject()(
       groupId <- user.groupId
       chatId <- (json \ "chat_id").asOpt[Int]
       chatType@("user" | "group") <- (json \ "chat_type").asOpt[String]
-      _ <- chatType match {
+      chat <- chatType match {
         case "user" => chatService.findUserChat(user.id, chatId)
         case "group" => chatService.findGroupChat(chatId, groupId)
       }
     } yield {
-      socketNotificationService.typing(groupId, user.id, chatId, chatType)
+      socketNotificationService.typing(groupId, user.id, chat)
       Ok
     }).getOrElse(BadRequest)
   }

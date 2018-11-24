@@ -103,7 +103,7 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chatId <- (json \ "chat_id").asOpt[Int]
-      _ <- (json \ "chat_type").asOpt[String].map {
+      chat <- (json \ "chat_type").asOpt[String].flatMap {
         case "user" => {
           messageService.findChatIdByObjectId(oid).flatMap { chatId =>
             chatService.findById(chatId)
@@ -112,7 +112,7 @@ class MessageController @Inject()(
         case "group" => chatService.findGroupChat(chatId, groupId)
         case _ => None
       }
-      result <- messageService.read(oid)(groupId) if result.isUpdateOfExisting
+      result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
@@ -127,7 +127,7 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chatId <- (json \ "chat_id").asOpt[Int]
-      _ <- (json \ "chat_type").asOpt[String].map {
+      chat <- (json \ "chat_type").asOpt[String].flatMap {
         case "user" => {
           messageService.findChatIdByObjectId(oid).flatMap(chatId =>
             chatService.findById(chatId)
@@ -136,7 +136,7 @@ class MessageController @Inject()(
         case "group" => chatService.findGroupChat(chatId, groupId)
         case _ => None
       }
-      result <- messageService.delivery(oid, chatId)(groupId) if result.isUpdateOfExisting
+      result <- messageService.delivery(oid, chatId)(groupId, chat) if result.isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
@@ -152,7 +152,9 @@ class MessageController @Inject()(
       oid = new ObjectId(id)
       key <- (json \ "key").asOpt[String].orElse(Some(""))
       text <- (json \ "message").asOpt[String]
-      if messageService.change(oid, user.id, key, text)(groupId).isUpdateOfExisting
+      chatId <- messageService.findChatIdByObjectId(oid)
+      chat <- chatService.findById(chatId)
+      if messageService.change(oid, user.id, key, text)(groupId, chat).isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
@@ -167,10 +169,12 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       mode@(0 | 1) <- (json \ "mode").asOpt[Int]
       oid = new ObjectId(id)
+      chatId <- messageService.findChatIdByObjectId(oid)
+      chat <- chatService.findById(chatId)
       if (mode match {
         case 0 => messageService.softDelete(oid) _
         case 1 => messageService.remove(oid) _
-      })(groupId).isUpdateOfExisting
+      })(groupId, chat).isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)

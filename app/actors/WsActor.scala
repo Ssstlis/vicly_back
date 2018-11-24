@@ -32,7 +32,7 @@ class WsActor(
     logger.info(s"Disconnect ${user.id} with WS")
     socketNotificationService.offline(user.groupId, user.id)
     user.groupId.foreach(groupId =>
-      subscriberService.removeSubscriber(groupId, subscriber)
+      subscriberService.removeSubscriber(groupId, subscriber, user.id)
     )
   }
 }

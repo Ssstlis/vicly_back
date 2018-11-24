@@ -9,33 +9,34 @@ import utils.JsonHelper.ObjectIdFormat
 @Singleton
 class SocketNotificationService @Inject()(subscriberService: SubscriberService) {
 
-  private def push(event: Int, groupId: Int, json: JsValue) = {
-    subscriberService.subscriptionSubscribers(groupId).foreach(subscriber =>
+  private def push(event: Int, groupId: Int, json: JsValue, filter: Int => Boolean = (_: Int) => true) = {
+    subscriberService.subscriptionSubscribers(groupId).foreach {
+      case (subscriber, userId) if filter(userId) =>
       subscriber ! Json.obj(
         "event" -> event,
         "message" -> json
       )
-    )
+    }
   }
 
-  def markRead(groupId: Int, id: ObjectId) = {
-    push(5, groupId, Json.obj("id" -> id))
+  def markRead(groupId: Int, id: ObjectId, userIds: List[Int]) = {
+    push(5, groupId, Json.obj("id" -> id), userIds.contains)
   }
 
-  def markDelivery(groupId: Int, id: ObjectId) = {
-    push(4, groupId, Json.obj("id" -> id))
+  def markDelivery(groupId: Int, id: ObjectId, userIds: List[Int]) = {
+    push(4, groupId, Json.obj("id" -> id), userIds.contains)
   }
 
-  def changed(groupId: Int, id: ObjectId) = {
-    push(3, groupId, Json.obj("id" -> id))
+  def changed(groupId: Int, id: ObjectId, userIds: List[Int]) = {
+    push(3, groupId, Json.obj("id" -> id), userIds.contains)
   }
 
-  def softDelete(groupId: Int, id: ObjectId) = {
-    push(2, groupId, Json.obj("id" -> id))
+  def softDelete(groupId: Int, id: ObjectId, userIds: List[Int]) = {
+    push(2, groupId, Json.obj("id" -> id), userIds.contains)
   }
 
-  def remove(groupId: Int, id: ObjectId) = {
-    push(1, groupId, Json.obj("id" -> id))
+  def remove(groupId: Int, id: ObjectId, userIds: List[Int]) = {
+    push(1, groupId, Json.obj("id" -> id), userIds.contains)
   }
 
   def newMessage(groupId: Int, chatType: String, message: Message, chat: Chat) = {
@@ -43,7 +44,7 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
       "chat_type" -> chatType,
       "message" -> Json.toJson(message)(Message.writes(chat))
     )
-    push(0, groupId, json)
+    push(0, groupId, json, chat.userIds.contains)
   }
 
   def online(groupIdO: Option[Int], userId: Int) = {
@@ -58,37 +59,37 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
     push(13, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
   }
 
-  def typing(groupId: Int, userId: Int, chatId: Int, chatType: String) = {
+  def typing(groupId: Int, userId: Int, chat: Chat) = {
     val json = Json.obj(
       "user_id" -> userId,
-      "chat_id" -> chatId,
-      "chat_type" -> chatType
+      "chat_id" -> chat.id,
+      "chat_type" -> chat.chatType
     )
-    push(20, groupId, json)
+    push(20, groupId, json, chat.userIds.contains)
   }
 
   def newGroupChat(groupId: Int, userIds: List[Int]) = {
-    push(21, groupId, Json.toJson(userIds))
+    push(21, groupId, Json.toJson(userIds), userIds.contains)
   }
 
-  def newUserInChat(groupId: Int, chatId: Int, userId: Int) = {
+  def newUserInChat(groupId: Int, chat: Chat, userId: Int) = {
     val json = Json.obj(
-      "chat_id" -> chatId,
+      "chat_id" -> chat.id,
       "user_id" -> userId
     )
-    push(22, groupId, json)
+    push(22, groupId, json, chat.userIds.contains)
   }
 
-  def removeUserInChat(groupId: Int, chatId: Int, userId: Int) = {
+  def removeUserInChat(groupId: Int, chat: Chat, userId: Int) = {
     val json = Json.obj(
-      "chat_id" -> chatId,
+      "chat_id" -> chat.id,
       "user_id" -> userId
     )
-    push(23, groupId, json)
+    push(23, groupId, json, chat.userIds.contains)
   }
 
-  def archiveChat(groupId: Int, chatId: Int) = {
-    push(24, groupId, Json.obj("chat_id" -> chatId))
+  def archiveChat(groupId: Int, chat: Chat) = {
+    push(24, groupId, Json.obj("chat_id" -> chat.id), chat.userIds.contains)
   }
 
   def userSetStatus(groupId: Int, userId: Int, status: String) = {

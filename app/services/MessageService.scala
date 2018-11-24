@@ -23,18 +23,18 @@ class MessageService @Inject()(
 
   def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int)
 
-  def read(id: ObjectId)(groupId: Int) = {
+  def read(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.markRead(id)
     result.foreach(result => if (result.isUpdateOfExisting) {
-      socketNotificationService.markRead(groupId, id)
+      socketNotificationService.markRead(groupId, id, chat.userIds)
     })
     result
   }
 
-  def delivery(id: ObjectId, chatId: Int)(groupId: Int) = {
+  def delivery(id: ObjectId, chatId: Int)(groupId: Int, chat: Chat) = {
     val result = messageDao.markDelivery(id, chatId)
     result.foreach(result => if (result.isUpdateOfExisting) {
-      socketNotificationService.markDelivery(groupId, id)
+      socketNotificationService.markDelivery(groupId, id, chat.userIds)
     })
     result
   }
@@ -47,21 +47,21 @@ class MessageService @Inject()(
 
   def findLastMessage(id: Int) = messageDao.findLastMessage(id)
 
-  def change(id: ObjectId, userId: Int, key: String, text: String)(groupId: Int) = {
+  def change(id: ObjectId, userId: Int, key: String, text: String)(groupId: Int, chat: Chat) = {
     val result = messageDao.change(id, userId, key, text)
-    if (result.isUpdateOfExisting) socketNotificationService.changed(groupId, id)
+    if (result.isUpdateOfExisting) socketNotificationService.changed(groupId, id, chat.userIds)
     result
   }
 
-  def softDelete(id: ObjectId)(groupId: Int) = {
+  def softDelete(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.softDelete(id)
-    if (result.isUpdateOfExisting) socketNotificationService.softDelete(groupId, id)
+    if (result.isUpdateOfExisting) socketNotificationService.softDelete(groupId, id, chat.userIds)
     result
   }
 
-  def remove(id: ObjectId)(groupId: Int) = {
+  def remove(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.removeById(id)
-    if (result.isUpdateOfExisting) socketNotificationService.remove(groupId, id)
+    if (result.isUpdateOfExisting) socketNotificationService.remove(groupId, id, chat.userIds)
     result
   }
 
