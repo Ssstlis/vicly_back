@@ -38,4 +38,8 @@ class UserService @Inject()(userDao: UserDao) {
   def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password)
 
   def findByIdNonArchive(id: Int) = userDao.findByIdNonArchive(id)
+
+  def archive(id: Int) = userDao.archive(id)
+
+
 }

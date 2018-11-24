@@ -109,5 +109,15 @@ class UserDao @Inject()(
      "archive" -> false
    ))
  }
+  def archive(id: Int) ={
+    dao.update(
+      MongoDBObject("id" -> id),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "archive" -> true
+        )
+      )
+    )
+  }
 
 }

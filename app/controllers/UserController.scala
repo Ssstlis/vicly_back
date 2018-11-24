@@ -33,7 +33,7 @@ class UserController @Inject()(
     val json = request.body
     (for {
       login <- (json \ "login").asOpt[String]
-      password <- (json \"password").asOpt[String]
+      password <- (json \ "password").asOpt[String]
       user <- userService.findByLoginAndPassword(login, password)
     } yield {
       userService.setActive(user)
@@ -71,7 +71,7 @@ class UserController @Inject()(
           Right(group -> users)
         }).getOrElse(Left(users))
       }
-    }
+      }
 
     val withoutGroup = usersWithoutGroup ::: usersWithGroup.flatMap {
       case Left(users) => users
@@ -82,7 +82,7 @@ class UserController @Inject()(
       val usersWithMessages = users.seq.map { user =>
         val (unread, lastO) = chatService.findUserChat(request.user.id, user.id).map { chat =>
           messageService.findUnreadMessagesCount(chat.id, request.user.id) ->
-          messageService.findLastMessage(chat.id, request.user.id)
+            messageService.findLastMessage(chat.id, request.user.id)
         }.getOrElse(0L, None)
         (user, unread, lastO)
       }
@@ -114,6 +114,27 @@ class UserController @Inject()(
       }.getOrElse(BadRequest)
     } else {
       BadRequest
+    }
+  }
+
+  def archive(userIdO: Option[Int]) = authUtils.authenticateAction { request =>
+    val user = request.user
+    val userId = userIdO.getOrElse(user.id)
+
+    if (userId == user.id) {
+      userService.findByIdNonArchive(userId).collect { case _
+        if userService.archive(userId).isUpdateOfExisting =>
+        Ok
+      }.getOrElse(BadRequest)
+    } else {
+      (for {
+        groupId <- user.groupId
+        _ <- groupService.findByIdAndOwner(groupId, user._id)
+        user <- userService.findByIdNonArchive(userId)
+        if user.groupId.contains(groupId) && userService.archive(userId).isUpdateOfExisting
+      } yield {
+        Ok
+      }).getOrElse(BadRequest)
     }
   }
 }
