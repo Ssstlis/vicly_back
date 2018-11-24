@@ -26,7 +26,7 @@ class MessageController @Inject()(
     } yield {
       chatType match {
         case "user" => {
-          if (userService.findByIdNonArchive(message.chatId).isEmpty) {
+          if (userService.findByIdNonArchive(message.chatId).isDefined) {
             chatService.findUserChat(user.id, targetUserId).map { chat =>
               if (
                 userService.findOne(message.chatId).isDefined &&
