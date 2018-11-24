@@ -103,7 +103,10 @@ class MessageDao @Inject()(
   }
 
   def findLastMessage(id: Int) = {
-    dao.find(MongoDBObject("chat_id" -> id))
+    dao.find(MongoDBObject(
+      "chat_id" -> id,
+      "deleted" -> false
+    ))
       .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
       .limit(1)
       .toList

@@ -46,7 +46,7 @@ trait MessageJson {
     Reads.pure(from) and
     ((__ \ "key").read[String] orElse Reads.pure("")) and
     (__ \ "message").read[String] and
-    Reads.pure(true) and
+    Reads.pure(false) and
     (__ \ "reply_for").readNullable[ObjectId] and
     (__ \ "id").read[Int] and
     Reads.pure(MessageTime()) and

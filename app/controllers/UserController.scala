@@ -77,7 +77,7 @@ class UserController @Inject()(
       case _ => List.empty[User]
     }.toList
 
-    val withGroups = usersWithGroup.collect { case Right((groupId, users)) =>
+    val withGroups = usersWithGroup.collect { case Right((group, users)) =>
       val usersWithMessages = users.seq.map { user =>
         val (unread, lastO) = chatService.findUserChat(request.user.id, user.id).map { chat =>
           messageService.findUnreadMessagesCount(chat.id, request.user.id) ->
@@ -85,15 +85,10 @@ class UserController @Inject()(
         }.getOrElse(0L, None)
         (user, unread, lastO)
       }
-      val groupChatMap = (for {
-        groupId <- request.user.groupId
-        chats = chatService.findGroupChatByGroupId(groupId)
-      } yield {
-        chats.map(chat =>
-          chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id))
-        ).toMap
-      }).getOrElse(Map.empty)
-      groupId -> (usersWithMessages, groupChatMap)
+      val groupChatMap = chatService.findGroupChatByGroupId(group.id).map(chat =>
+        chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id))
+      ).toMap
+      group -> (usersWithMessages, groupChatMap)
     }.toMap.seq
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))
