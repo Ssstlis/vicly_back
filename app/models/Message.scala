@@ -17,7 +17,8 @@ case class Message(
   @Key("timestamp_post") timestampPost: MessageTime,
   @Key("timestamp_change") timestampChange: Option[MessageTime] = None,
   @Key("timestamp_delivery") timestampDelivery: Option[MessageTime] = None,
-  @Key("timestamp_read") timestampRead: Option[MessageTime] = None
+  @Key("timestamp_read") timestampRead: Option[MessageTime] = None,
+  attachments: List[String] = List.empty
 )
 
 trait MessageJson {
@@ -31,7 +32,8 @@ trait MessageJson {
       "timestamp_post" -> m.timestampPost,
       "timestamp_change" -> m.timestampChange,
       "timestamp_delivery" -> m.timestampDelivery,
-      "timestamp_read" -> m.timestampRead
+      "timestamp_read" -> m.timestampRead,
+      "attachments" -> m.attachments
     )
   }
 
@@ -52,7 +54,8 @@ trait MessageJson {
     Reads.pure(MessageTime()) and
     Reads.pure(None) and
     Reads.pure(None) and
-    Reads.pure(None)
+    Reads.pure(None) and
+    ((__ \ "attachments").read[List[String]] orElse Reads.pure(List.empty))
   )(Message.apply _)
 }
 

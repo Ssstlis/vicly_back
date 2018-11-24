@@ -21,7 +21,6 @@ case class User(
   @Key("last_activity") lastActivity: Int = 0,
   archive: Boolean = false,
   avatar: String = ""
-
 ) {
   def toJson = {
     Json.obj(

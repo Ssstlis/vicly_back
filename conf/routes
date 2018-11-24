@@ -40,5 +40,6 @@ POST        /api/chat/archive                              controllers.ChatContr
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)
 
 #Attachments
-POST        /api/attachments/upload                        controllers.AttachmentController.upload(is_avatar: Boolean = false)
-GET         /api/attachments/download/:uuid                controllers.AttachmentController.download(uuid: String)
+POST        /api/attachment/upload/:is_avatar             controllers.AttachmentController.upload(is_avatar: Int)
+GET         /api/attachment/download/:uuid                controllers.AttachmentController.download(uuid: String)
+GET         /api/attachment/list                          controllers.AttachmentController.list

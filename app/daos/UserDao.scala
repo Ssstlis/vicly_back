@@ -139,7 +139,7 @@ class UserDao @Inject()(
 
   def setStatus(userId: Int, status: String) = {
     dao.update(
-      MongoDBObject("user_id" -> userId),
+      MongoDBObject("id" -> userId),
       MongoDBObject(
         "$set" -> MongoDBObject(
         "status" -> status
@@ -150,7 +150,7 @@ class UserDao @Inject()(
 
   def removeStatus(userId: Int) = {
     dao.update(
-      MongoDBObject("user_id" -> userId),
+      MongoDBObject("id" -> userId),
       MongoDBObject(
         "$set" -> MongoDBObject(
           "status" -> ""
@@ -161,7 +161,7 @@ class UserDao @Inject()(
 
   def setAvatar(userId: Int, uuid: String) = {
     dao.update(
-      MongoDBObject("user_id" -> userId),
+      MongoDBObject("id" -> userId),
       MongoDBObject(
         "$set" -> MongoDBObject(
           "avatar" -> uuid
@@ -172,7 +172,7 @@ class UserDao @Inject()(
 
   def removeAvatar(userId: Int) = {
     dao.update(
-      MongoDBObject("user_id" -> userId),
+      MongoDBObject("id" -> userId),
       MongoDBObject(
         "$set" -> MongoDBObject(
           "avatar" -> ""
