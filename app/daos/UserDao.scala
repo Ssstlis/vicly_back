@@ -98,7 +98,7 @@ class UserDao @Inject()(
       MongoDBObject("id" -> id),
       MongoDBObject(
         "$set" -> MongoDBObject(
-          "password" -> password.md5.md5.md5
+          "password" -> password
         )
       )
     )

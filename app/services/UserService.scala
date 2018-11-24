@@ -35,7 +35,7 @@ class UserService @Inject()(userDao: UserDao) {
 
   def updateActivity(id: Int) = userDao.updateActivity(id)
 
-  def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password)
+  def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password.md5.md5.md5)
 
   def findByIdNonArchive(id: Int) = userDao.findByIdNonArchive(id)
 
