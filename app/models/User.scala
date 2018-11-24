@@ -20,7 +20,7 @@ case class User(
   id: Int,
   @Key("last_activity") lastActivity: Int = 0,
   archive: Boolean = false,
-  avatar: String
+  avatar: String = ""
 
 ) {
   def toJson = {

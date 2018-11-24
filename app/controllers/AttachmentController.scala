@@ -40,7 +40,6 @@ class AttachmentController @Inject()(
            sh(s"cp $tempPath $dirPath/${file.filename}") !
          ) == 0
     } yield {
-      println(file)
       if (isAvatar) userService.setAvatar(user.id, uuid)(groupId)
       Ok(uuid)
     }).getOrElse(BadRequest)
