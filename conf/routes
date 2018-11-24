@@ -31,7 +31,7 @@ POST        /api/chat/create                               controllers.ChatContr
 POST        /api/chat/typing                               controllers.ChatController.typing
 POST        /api/chat/add                                  controllers.ChatController.add
 POST        /api/chat/remove                               controllers.ChatController.remove
-POST        /api/chat/arcive                               controllers.ChatController.archive
+POST        /api/chat/archive                              controllers.ChatController.archive
 
 #WebSocket
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)
