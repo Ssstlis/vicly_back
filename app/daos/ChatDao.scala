@@ -72,11 +72,11 @@ class ChatDao @Inject()(
   }
 
   def createUserChat(first: Int, second: Int, groupId: Int) = {
-    dao.insert(Chat(maxId + 1, groupId, List(first, second), "user")).isDefined
+    dao.insert(Chat(maxId + 1, groupId, List(first, second), "user", None, None)).isDefined
   }
 
-  def createGroupChat(userIds: List[Int], groupId: Int) = {
-    dao.insert(Chat(maxId + 1, groupId, userIds, "group")).isDefined
+  def createGroupChat(userIds: List[Int], groupId: Int, ownerId: ObjectId) = {
+    dao.insert(Chat(maxId + 1, groupId, userIds, "group", None, Some(ownerId))).isDefined
   }
 
   def findGroupChat(id: Int, groupId: Int) = {

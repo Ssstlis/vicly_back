@@ -38,4 +38,8 @@ class UserService @Inject()(userDao: UserDao) {
   def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password.md5.md5.md5)
 
   def findByIdNonArchive(id: Int) = userDao.findByIdNonArchive(id)
+
+  def usersSameGroupNonArchive(ids: List[Int], groupId: Int) = {
+    ids.distinct.size.toLong == userDao.findAllNonArchive(ids, groupId)
+  }
 }

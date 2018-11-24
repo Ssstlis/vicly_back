@@ -23,3 +23,6 @@ POST        /api/message/read                       controllers.MessageControlle
 POST        /api/message/delivery                   controllers.MessageController.deliveryMessage
 POST        /api/message/delete                     controllers.MessageController.delete
 POST        /api/message/change                     controllers.MessageController.change
+
+#Chat
+POST        /api/chat/create                        controllers.ChatController.createGroupChat

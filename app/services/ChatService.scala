@@ -2,6 +2,7 @@ package services
 
 import com.google.inject.{Inject, Singleton}
 import daos.ChatDao
+import org.bson.types.ObjectId
 
 @Singleton
 class ChatService @Inject()(chatDao: ChatDao) {
@@ -22,7 +23,7 @@ class ChatService @Inject()(chatDao: ChatDao) {
 
   def createUserChat(first: Int, second: Int, groupId: Int) = chatDao.createUserChat(first, second, groupId)
 
-  def createGroupChat(userIds: List[Int], groupId: Int) = chatDao.createGroupChat(userIds, groupId)
+  def createGroupChat(userIds: List[Int], groupId: Int, ownerId: ObjectId) = chatDao.createGroupChat(userIds, groupId, ownerId)
 
   def findGroupChat(id: Int, groupId: Int) = chatDao.findGroupChat(id, groupId)
 

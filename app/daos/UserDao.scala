@@ -110,4 +110,11 @@ class UserDao @Inject()(
    ))
  }
 
+  def findAllNonArchive(ids: List[Int], groupId: Int) = {
+    println(ids)
+    dao.count(MongoDBObject(
+      "id" -> MongoDBObject("$in" -> ids),
+      "group_id" -> groupId
+    ))
+  }
 }
