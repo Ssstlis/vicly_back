@@ -48,7 +48,11 @@ class MessageDao @Inject()(
   def findByChatId(chatId: Int, page: Int) = {
     dao.find(MongoDBObject(
       "chat_id" -> chatId
-    )).skip(page * 20).limit(20).toList
+    ))
+      .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
+      .skip(page * 20)
+      .limit(20)
+      .toList
   }
 
   def findUnreadMessages(id: Int) = {

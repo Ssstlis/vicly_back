@@ -72,7 +72,7 @@ class MessageController @Inject()(
       case _ => None
     }).map { chat =>
       messageService.findByChatId(chat.id, page)
-    }.getOrElse(List.empty)
+    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
     Ok(Json.toJson(messages))
   }
 
@@ -84,7 +84,7 @@ class MessageController @Inject()(
       case _ => None
     }).map { chat =>
       messageService.findUnreadMessages(chat.id)
-    }.getOrElse(List.empty)
+    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
     Ok(Json.toJson(messages))
   }
 
