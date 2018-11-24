@@ -7,7 +7,7 @@ import com.google.inject.{Inject, Singleton}
 import org.bson.types.ObjectId
 import pdi.jwt.JwtJson
 import play.api.mvc._
-import services.{ConfigService, UserService}
+import services.{ConfigService, SocketNotificationService, UserService}
 import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
@@ -48,7 +48,7 @@ class AuthUtils @Inject()(
         password <- (json \ "password").asOpt[String]
         user <- userService.find(userId, login, password)
       } yield {
-        userService.updateActivity(user.id)
+        userService.updateActivity(user.id)(user.groupId)
         block(UserRequest(user, request))
       }).getOrElse(Future.successful(Results.Forbidden))
     }

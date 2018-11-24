@@ -18,6 +18,7 @@ class UserController @Inject()(
   groupService: GroupService,
   inviteService: InviteService,
   messageService: MessageService,
+  socketNotificationService: SocketNotificationService,
   userService: UserService
 ) extends InjectedController {
 
@@ -37,7 +38,7 @@ class UserController @Inject()(
       user <- userService.findByLoginAndPassword(login, password)
     } yield {
       userService.setActive(user)
-      userService.updateActivity(user.id)
+      userService.updateActivity(user.id)(user.groupId)
 
       val token = JwtJson.encode(user.claim, config.secret_key, config.algo)
       Ok(Json.toJson(user)(User.writesWithToken(token)))
@@ -46,6 +47,7 @@ class UserController @Inject()(
 
   def logout = authUtils.authenticateAction { request =>
     val user = request.user
+    socketNotificationService.offline(user.groupId, user.id)
     userService.setInactive(user)
     Ok.withHeaders()
   }
@@ -101,7 +103,7 @@ class UserController @Inject()(
     if (userService.updatePassword(user.id, password).isUpdateOfExisting) {
       userService.findByLoginAndPassword(user.login, password).map { user =>
         userService.setActive(user)
-        userService.updateActivity(user.id)
+        userService.updateActivity(user.id)(user.groupId)
 
         val token = JwtJson.encode(user.claim, config.secret_key, config.algo)
         Ok(Json.toJson(user)(User.writesWithToken(token)))
@@ -116,8 +118,8 @@ class UserController @Inject()(
     val userId = userIdO.getOrElse(user.id)
 
     if (userId == user.id) {
-      userService.findByIdNonArchive(userId).collect { case _
-        if userService.archive(userId).isUpdateOfExisting =>
+      userService.findByIdNonArchive(userId).collect { case user
+        if userService.archive(userId)(user.groupId).isUpdateOfExisting =>
         Ok
       }.getOrElse(BadRequest)
     } else {
@@ -125,7 +127,7 @@ class UserController @Inject()(
         groupId <- user.groupId
         _ <- groupService.findByIdAndOwner(groupId, user._id)
         user <- userService.findByIdNonArchive(userId)
-        if user.groupId.contains(groupId) && userService.archive(userId).isUpdateOfExisting
+        if user.groupId.contains(groupId) && userService.archive(userId)(user.groupId).isUpdateOfExisting
       } yield {
         Ok
       }).getOrElse(BadRequest)

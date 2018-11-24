@@ -18,13 +18,16 @@ GET         /api/group/list                                controllers.GroupCont
 POST        /api/group/set_purpose                         controllers.GroupController.setPurpose
 
 #Messages
-POST        /api/message/post                              controllers.MessageController.postMessage
-GET         /api/message/chat/:id/:chat_type               controllers.MessageController.chatMessages(id: Int, chat_type: String, page: Int = 0)
-GET         /api/message/chat/unread/:id/:chat_type        controllers.MessageController.undeadMessages(id: Int, chat_type: String)
-POST        /api/message/read                              controllers.MessageController.readMessage
-POST        /api/message/delivery                          controllers.MessageController.deliveryMessage
+POST        /api/message/post                              controllers.MessageController.post
+GET         /api/message/chat/:id/:chat_type               controllers.MessageController.chat(id: Int, chat_type: String, page: Int = 0)
+GET         /api/message/chat/unread/:id/:chat_type        controllers.MessageController.undead(id: Int, chat_type: String)
+POST        /api/message/read                              controllers.MessageController.read
+POST        /api/message/delivery                          controllers.MessageController.delivery
 POST        /api/message/delete                            controllers.MessageController.delete
 POST        /api/message/change                            controllers.MessageController.change
 
 #Chat
 POST        /api/chat/create                               controllers.ChatController.createGroupChat
+
+#WebSocket
+GET         /ws/:token                                     controllers.WsController.subscribe(token: String)

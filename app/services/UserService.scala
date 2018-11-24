@@ -7,7 +7,10 @@ import org.bson.types.ObjectId
 import utils.Helper.StringExtended
 
 @Singleton
-class UserService @Inject()(userDao: UserDao) {
+class UserService @Inject()(
+  socketNotificationService: SocketNotificationService,
+  userDao: UserDao
+) {
 
   def maxId = userDao.maxId
 
@@ -33,7 +36,10 @@ class UserService @Inject()(userDao: UserDao) {
 
   def save(user: User) = userDao.save(user)
 
-  def updateActivity(id: Int) = userDao.updateActivity(id)
+  def updateActivity(id: Int)(groupIdO: Option[Int]) = {
+    socketNotificationService.activity(groupIdO, id)
+    userDao.updateActivity(id)
+  }
 
   def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password.md5.md5.md5)
 
@@ -43,5 +49,11 @@ class UserService @Inject()(userDao: UserDao) {
     ids.distinct.size.toLong == userDao.findAllNonArchive(ids, groupId)
   }
 
-  def archive(id: Int) = userDao.archive(id)
+  def archive(id: Int)(groupIdO: Option[Int]) = {
+    val result = userDao.archive(id)
+    if (result.isUpdateOfExisting) socketNotificationService.archive(groupIdO, id)
+    result
+  }
+
+  def findAllPossiblyOfflined = userDao.findAllPossiblyOfflined
 }

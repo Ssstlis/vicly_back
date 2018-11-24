@@ -37,8 +37,8 @@ trait MessageJson {
 
   implicit val writes: Writes[Message] = (m: Message) => toJson(m)
 
-  def writes(chatO: Option[Chat]): Writes[Message] = (m: Message) => {
-    toJson(m) + ("chat" -> Json.toJson(chatO))
+  def writes(chat: Chat): Writes[Message] = (m: Message) => {
+    toJson(m) + ("chat" -> Json.toJson(chat))
   }
 
   def reads(from: Int): Reads[Message] = (

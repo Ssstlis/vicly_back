@@ -123,10 +123,17 @@ class UserDao @Inject()(
   }
 
   def findAllNonArchive(ids: List[Int], groupId: Int) = {
-    println(ids)
     dao.count(MongoDBObject(
       "id" -> MongoDBObject("$in" -> ids),
       "group_id" -> groupId
     ))
+  }
+
+  def findAllPossiblyOfflined = {
+    dao.find(MongoDBObject(
+      "last_activity" -> MongoDBObject("$lt" -> ((System.currentTimeMillis() / 1000).toInt - 600)),
+      "active" -> true,
+      "archive" -> false
+    )).toList
   }
 }

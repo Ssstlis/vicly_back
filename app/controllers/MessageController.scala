@@ -16,7 +16,7 @@ class MessageController @Inject()(
   userService: UserService
 ) extends InjectedController {
 
-  def postMessage = authUtils.authenticateAction(parse.json) { request =>
+  def post = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
     (for {
       groupId <- user.groupId
@@ -30,7 +30,7 @@ class MessageController @Inject()(
             chatService.findUserChat(user.id, targetUserId).map { chat =>
               if (
                 userService.findOne(message.chatId).isDefined &&
-                messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()
+                messageService.save(message.copy(chatId = chat.id))(groupId, "user", chat).wasAcknowledged()
               ) {
                 Ok
               } else {
@@ -41,12 +41,8 @@ class MessageController @Inject()(
                 userService.findOne(targetUserId).isDefined &&
                 chatService.createUserChat(user.id, targetUserId, groupId)
               ) {
-                chatService.findUserChat(user.id, targetUserId).map { chat =>
-                  if (messageService.save(message.copy(chatId = chat.id)).wasAcknowledged()) {
-                    Ok
-                  } else {
-                    BadRequest
-                  }
+                chatService.findUserChat(user.id, targetUserId).collect { case chat
+                  if messageService.save(message.copy(chatId = chat.id))(groupId, "user", chat).wasAcknowledged() => Ok
                 }.getOrElse(BadRequest)
               } else {
                 BadRequest
@@ -57,14 +53,14 @@ class MessageController @Inject()(
           }
         }
         case "group" =>
-          chatService.findGroupChat(targetUserId, groupId).collect {
-            case chat if messageService.save(message.copy(chatId = chat.id)).wasAcknowledged() => Ok
+          chatService.findGroupChat(targetUserId, groupId).collect { case chat
+            if messageService.save(message.copy(chatId = chat.id))(groupId, "group", chat).wasAcknowledged() => Ok
           }.getOrElse(BadRequest)
       }
     }).getOrElse(BadRequest)
   }
 
-  def chatMessages(chatId: Int, chatType: String, page: Int) = authUtils.authenticateAction { request =>
+  def chat(chatId: Int, chatType: String, page: Int) = authUtils.authenticateAction { request =>
     val user = request.user
     val messages = (chatType match {
       case "user" => chatService.findUserChat(user.id, chatId)
@@ -76,7 +72,7 @@ class MessageController @Inject()(
     Ok(Json.toJson(messages))
   }
 
-  def undeadMessages(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
+  def undead(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
     val user = request.user
     val messages = (chatType match {
       case "user" => chatService.findUserChat(user.id, chatId)
@@ -88,7 +84,7 @@ class MessageController @Inject()(
     Ok(Json.toJson(messages))
   }
 
-  def readMessage = authUtils.authenticateAction(parse.json) { request =>
+  def read = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
 
@@ -106,13 +102,13 @@ class MessageController @Inject()(
         case "group" => chatService.findGroupChat(chatId, groupId)
         case _ => None
       }
-      result <- messageService.read(oid, chatId) if result.isUpdateOfExisting
+      result <- messageService.read(oid, chatId)(groupId) if result.isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
   }
 
-  def deliveryMessage = authUtils.authenticateAction(parse.json) { request =>
+  def delivery = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
 
@@ -130,7 +126,7 @@ class MessageController @Inject()(
         case "group" => chatService.findGroupChat(chatId, groupId)
         case _ => None
       }
-      result <- messageService.delivery(oid, chatId) if result.isUpdateOfExisting
+      result <- messageService.delivery(oid, chatId)(groupId) if result.isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
@@ -141,11 +137,12 @@ class MessageController @Inject()(
     val user = request.user
 
     (for {
+      groupId <- user.groupId
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       key <- (json \ "key").asOpt[String].orElse(Some(""))
       text <- (json \ "message").asOpt[String]
-      if messageService.change(oid, user.id, key, text).isUpdateOfExisting
+      if messageService.change(oid, user.id, key, text)(groupId).isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
@@ -153,15 +150,17 @@ class MessageController @Inject()(
 
   def delete = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
+    val user = request.user
 
     (for {
+      groupId <- user.groupId
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       mode@(0 | 1) <- (json \ "mode").asOpt[Int]
       oid = new ObjectId(id)
       if (mode match {
-        case 0 => messageService.softDelete(oid)
-        case 1 => messageService.remove(oid)
-      }).isUpdateOfExisting
+        case 0 => messageService.softDelete(oid) _
+        case 1 => messageService.remove(oid) _
+      })(groupId).isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
