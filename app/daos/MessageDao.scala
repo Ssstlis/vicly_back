@@ -71,8 +71,8 @@ class MessageDao @Inject()(
       "$or" -> MongoDBList(
         "from" -> MongoDBObject("$ne" -> from),
         "$and" -> MongoDBList(
-          "from" -> from,
-          "deleted" -> false
+          "from" -> from/*,
+          "deleted" -> false*/
         )
       )
     ))
@@ -81,8 +81,8 @@ class MessageDao @Inject()(
   def findUnreadMessagesCount(id: Int) = {
     dao.count(MongoDBObject(
       "chat_id" -> id,
-      "timestamp_read" -> MongoDBObject("$exists" -> 0),
-      "deleted" -> false
+      "timestamp_read" -> MongoDBObject("$exists" -> 0)/*,
+      "deleted" -> false*/
     ))
   }
 
@@ -92,8 +92,8 @@ class MessageDao @Inject()(
       "$or" -> MongoDBList(
         "from" -> MongoDBObject("$ne" -> from),
         "$and" -> MongoDBList(
-          "from" -> from,
-          "deleted" -> false
+          "from" -> from/*,
+          "deleted" -> false*/
         )
       )
     )).sort(MongoDBObject("timestamp_post.timestamp" -> -1))
@@ -104,8 +104,8 @@ class MessageDao @Inject()(
 
   def findLastMessage(id: Int) = {
     dao.find(MongoDBObject(
-      "chat_id" -> id,
-      "deleted" -> false
+      "chat_id" -> id/*,
+      "deleted" -> false*/
     ))
       .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
       .limit(1)
