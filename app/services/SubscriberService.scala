@@ -1,14 +1,12 @@
 package services
 
-import javax.inject.Inject
-
 import scala.collection.mutable
 
 import akka.actor.ActorRef
 import com.google.inject.Singleton
 
 @Singleton
-class SubscriberService @Inject()() {
+class SubscriberService {
 
   private val subscribersMap = mutable.Map.empty[Int, mutable.Buffer[(ActorRef, Int)]]
 

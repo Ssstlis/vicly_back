@@ -19,13 +19,15 @@ class MessageController @Inject()(
 
   def post = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
+    val json = request.body
+
     (for {
       groupId <- user.groupId
-      message <- request.body.asOpt(Message.reads(user.id))
-      chatType@("user" | "group") <- (request.body \ "type").asOpt[String]
+      message <- json.asOpt(Message.reads(user.id))
+      chatType@("user" | "group") <- (json \ "type").asOpt[String]
     } yield {
       val targetUserId = message.chatId
-      val replyForO = (request.body \ "reply_for").asOpt[ObjectId]
+      val replyForO = (json \ "reply_for").asOpt[ObjectId]
       chatType match {
         case "user" => {
           if (userService.findByIdNonArchive(targetUserId).isDefined) {
