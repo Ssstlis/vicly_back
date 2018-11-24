@@ -36,6 +36,13 @@ class GroupDao @Inject()(
     ))
   }
 
+  def findByIdAndOwner(id: Int, oId: ObjectId) = {
+    dao.findOne(MongoDBObject(
+      "id" -> id,
+      "owner" -> oId
+    ))
+  }
+
   def setPurpose(id: Int, purpose: String) = {
     dao.update(
       MongoDBObject("id" -> id),

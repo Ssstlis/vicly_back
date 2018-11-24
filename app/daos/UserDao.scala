@@ -103,12 +103,24 @@ class UserDao @Inject()(
       )
     )
   }
- def findByIdNonArchive(id: Int) = {
-   dao.findOne(MongoDBObject(
-     "id" -> id,
-     "archive" -> false
-   ))
- }
+
+  def findByIdNonArchive(id: Int) = {
+    dao.findOne(MongoDBObject(
+      "id" -> id,
+      "archive" -> false
+    ))
+  }
+
+  def archive(id: Int) = {
+    dao.update(
+      MongoDBObject("id" -> id),
+      MongoDBObject(
+        "$set" -> MongoDBObject(
+          "archive" -> true
+        )
+      )
+    )
+  }
 
   def findAllNonArchive(ids: List[Int], groupId: Int) = {
     println(ids)

@@ -42,4 +42,6 @@ class UserService @Inject()(userDao: UserDao) {
   def usersSameGroupNonArchive(ids: List[Int], groupId: Int) = {
     ids.distinct.size.toLong == userDao.findAllNonArchive(ids, groupId)
   }
+
+  def archive(id: Int) = userDao.archive(id)
 }

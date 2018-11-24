@@ -4,6 +4,7 @@ GET         /api/user/logout                        controllers.UserController.l
 POST        /api/user/signup                        controllers.UserController.signup
 GET         /api/user/list                          controllers.UserController.list
 POST        /api/user/update_password               controllers.UserController.updatePassword
+GET         /api/user/archive                       controllers.UserController.archive(userId: Option[Int])
 
 #Invite
 POST        /api/invite                             controllers.InviteController.create(group_id: Option[Int])
