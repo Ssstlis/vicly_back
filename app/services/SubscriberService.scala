@@ -40,4 +40,8 @@ class SubscriberService {
   def removeSubscriber(groupId: Int, subscriber: ActorRef, userId: Int): Unit = {
     removeSubscriber_(groupId, subscriber, userId)
   }
+
+  def allSubscribers = {
+    subscribersMap.map { case (_, list) => list }.flatten.toList
+  }
 }
