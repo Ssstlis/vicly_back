@@ -22,7 +22,7 @@ POST        /api/group/set_purpose                         controllers.GroupCont
 
 #Messages
 POST        /api/message/post                              controllers.MessageController.post
-GET         /api/message/chat/unread/:id/:chat_type        controllers.MessageController.undead(id: Int, chat_type: String)
+GET         /api/message/chat/unread/:id/:chat_type        controllers.MessageController.unread(id: Int, chat_type: String)
 GET         /api/message/chat/:id/:chat_type/:page         controllers.MessageController.chat(id: Int, chat_type: String, page: Int)
 POST        /api/message/read                              controllers.MessageController.read
 POST        /api/message/delivery                          controllers.MessageController.delivery
@@ -40,6 +40,7 @@ POST        /api/chat/archive                              controllers.ChatContr
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)
 
 #Attachments
-POST        /api/attachment/upload/:is_avatar             controllers.AttachmentController.upload(is_avatar: Int)
-GET         /api/attachment/download/:uuid                controllers.AttachmentController.download(uuid: String)
-GET         /api/attachment/list                          controllers.AttachmentController.list
+POST        /api/attachment/upload/:is_avatar              controllers.AttachmentController.upload(is_avatar: Int)
+GET         /api/attachment/download/:uuid                 controllers.AttachmentController.download(uuid: String)
+GET         /api/attachment/list                           controllers.AttachmentController.list
+GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)

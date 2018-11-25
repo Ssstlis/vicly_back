@@ -17,6 +17,8 @@ class AttachmentService @Inject()(
   config: Configuration
 ) {
 
+  val path = config.get[String]("path.upload")
+
   def saveFile(from: String, path: String, filename: String, userId: Int, size: Long) = {
     attachmentDao.saveFile(from, path, filename, userId, size)
   }
@@ -24,7 +26,7 @@ class AttachmentService @Inject()(
   def find(uuid: String, groupIdO: Option[Int]) = {
     for {
       groupId <- groupIdO
-      path <- config.getOptional[String]("path.upload")
+
       attach <- attachmentDao.find(uuid)
       filePath = s"$path/$groupId/$uuid"
       output <- Try(Seq("sh", "-c", s"ls $filePath -1") !!).toOption
@@ -36,4 +38,6 @@ class AttachmentService @Inject()(
   def findByUserId(userId: Int) = {
     attachmentDao.findByUserId(userId)
   }
+
+  def remove(userId: Int, uuid: String, path: String) = attachmentDao.remove(userId, uuid, path)
 }

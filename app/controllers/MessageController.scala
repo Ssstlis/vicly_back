@@ -84,7 +84,7 @@ class MessageController @Inject()(
     Ok(Json.toJson(messages))
   }
 
-  def undead(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
+  def unread(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
     val user = request.user
     val messages = (chatType match {
       case "user" => chatService.findUserChat(user.id, chatId)

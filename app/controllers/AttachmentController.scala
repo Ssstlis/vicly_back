@@ -20,6 +20,8 @@ class AttachmentController @Inject()(
   userService: UserService
 )(implicit ec: ExecutionContext) extends InjectedController {
 
+  val path = config.get[String]("path.upload")
+
   def upload(isAvatar: Int) = authUtils.authenticateAction(parse.multipartFormData) { request =>
     val user = request.user
     (for {
@@ -47,5 +49,15 @@ class AttachmentController @Inject()(
   def list = authUtils.authenticateAction { request =>
     val user = request.user
     Ok(Json.toJson(attachmentService.findByUserId(user.id)))
+  }
+
+  def remove(uuid: String) = authUtils.authenticateAction { request =>
+    val user = request.user
+    (for {
+      groupId <- user.groupId
+      _ <- attachmentService.remove(user.id, uuid, s"$path/$groupId/$uuid")
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
   }
 }
