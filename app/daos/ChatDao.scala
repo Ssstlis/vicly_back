@@ -72,11 +72,13 @@ class ChatDao @Inject()(
   }
 
   def createUserChat(first: Int, second: Int, groupId: Int) = {
-    dao.insert(Chat(maxId + 1, groupId, List(first, second), "user", None, None)).isDefined
+    val chat = Chat(maxId + 1, groupId, List(first, second), "user", None, None)
+    dao.insert(chat).isDefined
   }
 
   def createGroupChat(userIds: List[Int], groupId: Int, ownerId: ObjectId, name: String, purpose: Option[String] = None) = {
-    dao.insert(Chat(maxId + 1, groupId, userIds, "group", Some(false), Some(ownerId), Some(name), purpose)).isDefined
+    val chat = Chat(maxId + 1, groupId, userIds, "group", Some(false), Some(ownerId), Some(name), purpose)
+    dao.insert(chat).isDefined
   }
 
   def findGroupChat(id: Int, groupId: Int) = {

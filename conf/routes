@@ -44,3 +44,11 @@ POST        /api/attachment/upload/:is_avatar              controllers.Attachmen
 GET         /api/attachment/download/:uuid                 controllers.AttachmentController.download(uuid: String)
 GET         /api/attachment/list                           controllers.AttachmentController.list
 GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)
+
+#Role
+GET         /api/role/create/:description                  controllers.RoleController.create(description: String)
+GET         /api/role/update/:id/:description              controllers.RoleController.update(description: String, id: Int)
+GET         /api/role/remove/:id                           controllers.RoleController.remove(id: Int)
+GET         /api/role/list                                 controllers.RoleController.list
+GET         /api/role/one/:id                              controllers.RoleController.one(id: Int)
+GET         /api/role/one/:id/no_auth                      controllers.RoleController.oneNoAuth(id: Int)

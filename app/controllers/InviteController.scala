@@ -9,7 +9,7 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import play.api.mvc.InjectedController
-import services.{GroupService, InviteService, UserService}
+import services._
 import utils.Helper.{DateTimeExtended, StringExtended}
 
 @Singleton
@@ -17,6 +17,7 @@ class InviteController @Inject()(
   authUtils: AuthUtils,
   groupService: GroupService,
   inviteService: InviteService,
+  roleService: RoleService,
   userService: UserService
 ) extends InjectedController {
 
@@ -39,7 +40,14 @@ class InviteController @Inject()(
       lastName <- (json \ "last_name").asOpt[String]
     } yield {
       val uuid = randomUUID().toString
-      val invite = Invite(firstName, lastName, uuid, group.id, user.id)
+
+      val roleIdO = for {
+        roleId <- (json \ "role_id").asOpt[Int]
+        groupId <- groupId
+        role <- roleService.find(roleId, groupId)
+      } yield role.id
+
+      val invite = Invite(firstName, lastName, uuid, group.id, user.id, roleIdO)
       if (inviteService.create(invite).wasAcknowledged()) {
         Ok(Json.obj("invite_id" -> uuid))
       } else {

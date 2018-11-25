@@ -80,4 +80,6 @@ class UserService @Inject()(
     if (result.isUpdateOfExisting) socketNotificationService.userRemoveAvatar(groupId, userId)
     result
   }
+
+  def roleCount(id: Int, groupId: Int) = userDao.roleCount(id, groupId)
 }

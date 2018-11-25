@@ -180,4 +180,11 @@ class UserDao @Inject()(
       )
     )
   }
+
+  def roleCount(id: Int, groupId: Int) = {
+    dao.count(MongoDBObject(
+      "role_id" -> id,
+      "group_id" -> groupId
+    ))
+  }
 }
