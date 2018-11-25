@@ -4,24 +4,36 @@ import com.google.inject.{Inject, Singleton}
 import daos.MessageDao
 import models.{Chat, Message}
 import org.bson.types.ObjectId
+import utils.Helper.StringExtended
 
 @Singleton
 class MessageService @Inject()(
   messageDao: MessageDao,
   socketNotificationService: SocketNotificationService
-) {
+)(implicit configService: ConfigService) {
 
-  def all = messageDao.all
+  implicit class MessageExtended(m: Message) {
+    def encode = m.copy(text = m.text.encodeToken)
+
+    def decode = {
+      for {
+        json <- m.text.decodeToken
+        text <- (json \ "text").asOpt[String]
+      } yield m.copy(text = text)
+    }
+  }
+
+  def all = messageDao.all.flatMap(_.decode)
 
   def save(message: Message)(groupId: Int, chatType: String, chat: Chat) = {
-    val result = messageDao.dao.save(message)
+    val result = messageDao.dao.save(message.encode)
     if (result.wasAcknowledged()) {
       socketNotificationService.newMessage(groupId, chatType, message, chat)
     }
     result
   }
 
-  def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int)
+  def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int).flatMap(_.decode)
 
   def read(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.markRead(id)
@@ -39,16 +51,16 @@ class MessageService @Inject()(
     result
   }
 
-  def findUnreadMessages(id: Int, userId: Int) = messageDao.findUnreadMessages(id, userId)
+  def findUnreadMessages(id: Int, userId: Int) = messageDao.findUnreadMessages(id, userId).flatMap(_.decode)
 
   def findUnreadMessagesCount(id: Int, from: Int) = messageDao.findUnreadMessagesCount(id, from)
 
   def findUnreadMessagesCount(id: Int) = messageDao.findUnreadMessagesCount(id)
 
-  def findLastMessage(id: Int) = messageDao.findLastMessage(id)
+  def findLastMessage(id: Int) = messageDao.findLastMessage(id).flatMap(_.decode)
 
   def change(id: ObjectId, userId: Int, key: String, text: String)(groupId: Int, chat: Chat) = {
-    val result = messageDao.change(id, userId, key, text)
+    val result = messageDao.change(id, userId, key, text.encodeToken)
     if (result.isUpdateOfExisting) socketNotificationService.changed(groupId, id, chat.userIds)
     result
   }

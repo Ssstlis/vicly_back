@@ -7,7 +7,7 @@ import com.google.inject.{Inject, Singleton}
 import org.bson.types.ObjectId
 import pdi.jwt.JwtJson
 import play.api.mvc._
-import services.{ConfigService, SocketNotificationService, UserService}
+import services.{ConfigService, UserService}
 import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
