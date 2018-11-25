@@ -43,7 +43,7 @@ class InviteController @Inject()(
 
       val roleIdO = for {
         roleId <- (json \ "role_id").asOpt[Int]
-        groupId <- groupId
+        groupId <- groupIdO
         role <- roleService.find(roleId, groupId)
       } yield role.id
 
