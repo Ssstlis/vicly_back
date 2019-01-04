@@ -8,7 +8,7 @@ import pdi.jwt.JwtJson
 import play.api.libs.json.Json
 import services.ConfigService
 
-//Helper must help with buildbot triggering_5
+//Helper must help with buildbot triggering_6
 object Helper {
 
   implicit class DateTimeExtended(dt: DateTime) {
