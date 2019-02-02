@@ -8,7 +8,7 @@ import pdi.jwt.JwtJson
 import play.api.libs.json.Json
 import services.ConfigService
 
-//Helper please HELP ME. I'm HUNGRY
+//Helper please HELP ME. I'm HUNGRY.
 object Helper {
 
   implicit class DateTimeExtended(dt: DateTime) {
