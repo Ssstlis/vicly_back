@@ -10,13 +10,13 @@ import utils.MongoDbHelper.MongoDbCursorExtended
 
 @Singleton
 class ChatDao @Inject()(
-  mongoContext: MongoContext,
-  playSalat: PlaySalat
-) extends ModelCompanion[Chat, ObjectId] {
+                         mongoContext: MongoContext,
+                         playSalat: PlaySalat
+                       ) extends ModelCompanion[Chat, ObjectId] {
 
   import mongoContext._
 
-  val dao = new SalatDAO[Chat, ObjectId](playSalat.collection("chat", "ms")){}
+  val dao = new SalatDAO[Chat, ObjectId](playSalat.collection("chat", "ms")) {}
 
   def all = dao.find(MongoDBObject.empty).toList
 
@@ -50,19 +50,10 @@ class ChatDao @Inject()(
   def findUserChat(first: Int, second: Int) = {
     dao.findOne(MongoDBObject(
       "$and" -> MongoDBList(
-        "user_ids" -> MongoDBObject("$all" -> MongoDBList(first, second)),
         "$or" -> MongoDBList(
-          "user_ids" -> MongoDBObject("$size" -> 2),
-          "chat_type" -> "user"
-        )
-      )
-    ))
-  }
-
-  def findUserChat(userId: Int) = {
-    dao.findOne(MongoDBObject(
-      "$and" -> MongoDBList(
-        "user_ids" -> MongoDBObject("$all" -> MongoDBList(userId)),
+          MongoDBObject("user_ids" -> MongoDBList(first, second)),
+          MongoDBObject("user_ids" -> MongoDBList(second, first)),
+        ),
         "$or" -> MongoDBList(
           "user_ids" -> MongoDBObject("$size" -> 2),
           "chat_type" -> "user"

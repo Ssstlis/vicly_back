@@ -1,5 +1,5 @@
 
-val hack_backend = project
+val vicly_backend = project
   .in(file("."))
   .settings(
     libraryDependencies ++= Seq(
