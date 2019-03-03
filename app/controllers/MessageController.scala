@@ -104,15 +104,14 @@ class MessageController @Inject()(
       groupId <- user.groupId
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
-      chatId <- (json \ "chat_id").asOpt[Int]
-      chat <- (json \ "chat_type").asOpt[String].flatMap {
-        case "user" => {
-          messageService.findChatIdByObjectId(oid).flatMap { chatId =>
-            chatService.findById(chatId)
-          }
-        }
-        case "group" => chatService.findGroupChat(chatId, groupId)
+      chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
+        (json \ "chat_type").asOpt[String].flatMap {
+        case "user" =>
+          chatService.findById(chatId)
+        case "group" =>
+          chatService.findGroupChat(chatId, groupId)
         case _ => None
+        }
       }
       result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
     } yield {
