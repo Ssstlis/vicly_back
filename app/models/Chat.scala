@@ -7,7 +7,7 @@ import ru.tochkak.plugin.salat.Binders.objectIdWrites
 
 case class Chat(
   id: Int,
-  @Key("group_id") groupId: Int,
+  @Key("group_id") groupId: Option[Int] = None,
   @Key("user_ids") userIds: List[Int],
   @Key("chat_type") chatType: String,
   archive: Option[Boolean] = Some(false),
@@ -21,14 +21,13 @@ trait ChatJson {
   implicit val writes: Writes[Chat] = (c: Chat) => {
     val json = Json.obj(
       "id" -> c.id,
-      "group_id" -> c.groupId,
       "user_ids" -> c.userIds,
       "chat_type" -> c.chatType
     )
-
     c.chatType match {
       case "user" => json
       case "group" => json ++ Json.obj(
+        "group_id" -> c.groupId,
         "archive" -> c.archive,
         "owner" -> c.owner,
         "name" -> c.name,

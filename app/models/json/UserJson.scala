@@ -1,13 +1,13 @@
 package models.json
 
-import models.{Group, Message, User}
+import models.{Chat, Group, Message, User}
 import play.api.libs.json.Json
 
 object UserJson {
 
   def writesUsersPerGroups(
     withoutGroup: Seq[User],
-    withGroups: Map[Group, (Seq[(User, Long, Option[Message])], Map[Int, (Long, Option[Message])])]
+    withGroups: Map[Group, (Seq[(User, Long, Option[Message], Option[Chat])], Map[Int, (Long, Option[Message])])]
   ) = {
     Json.obj(
       "with_group" -> withGroups.map { case (group, (usersWithMessages, groupChatMap)) =>
@@ -20,9 +20,10 @@ object UserJson {
               "last" -> lastO
             )
           },
-          "users" -> usersWithMessages.map { case (user, unread, lastO) =>
+          "users" -> usersWithMessages.map { case (user, unread, lastO, chat) =>
             Json.obj(
               "user" -> user,
+              "user_chat" -> chat,
               "unread" -> unread,
               "last" -> lastO
             )

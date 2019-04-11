@@ -25,10 +25,10 @@ class MessageService @Inject()(
 
   def all = messageDao.all.flatMap(_.decode)
 
-  def save(message: Message)(groupId: Int, chatType: String, chat: Chat) = {
+  def save(message: Message)(chat: Chat) = {
     val result = messageDao.dao.save(message.encode)
     if (result.wasAcknowledged()) {
-      socketNotificationService.newMessage(groupId, chatType, message, chat)
+      socketNotificationService.newMessage(message, chat)
     }
     result
   }

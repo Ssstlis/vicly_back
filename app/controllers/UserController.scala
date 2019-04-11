@@ -12,15 +12,15 @@ import utils.CollectionHelper.TraversableOnceHelper
 
 @Singleton
 class UserController @Inject()(
-  authUtils: AuthUtils,
-  chatService: ChatService,
-  config: ConfigService,
-  groupService: GroupService,
-  inviteService: InviteService,
-  messageService: MessageService,
-  socketNotificationService: SocketNotificationService,
-  userService: UserService
-) extends InjectedController {
+                                authUtils: AuthUtils,
+                                chatService: ChatService,
+                                config: ConfigService,
+                                groupService: GroupService,
+                                inviteService: InviteService,
+                                messageService: MessageService,
+                                socketNotificationService: SocketNotificationService,
+                                userService: UserService
+                              ) extends InjectedController {
 
   def signup = Action(parse.json(User.reads(userService.nextId))) { request =>
     val user = request.body
@@ -72,25 +72,28 @@ class UserController @Inject()(
         } yield {
           Right(group -> users)
         }).getOrElse(Left(users))
-      }}
+      }
+      }
 
     val withoutGroup = usersWithoutGroup ::: usersWithGroup.flatMap {
       case Left(users) => users
       case _ => List.empty[User]
     }.toList
 
-    val withGroups = usersWithGroup.collect { case Right((group, users)) =>
-      val usersWithMessages = users.seq.map { user =>
-        val (unread, lastO) = chatService.findUserChat(request.user.id, user.id).map { chat =>
-          messageService.findUnreadMessagesCount(chat.id, request.user.id) ->
-            messageService.findLastMessage(chat.id)
-        }.getOrElse(0L, None)
-        (user, unread, lastO)
-      }
-      val groupChatMap = chatService.findGroupChatByGroupId(group.id).map(chat =>
-        chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id))
-      ).toMap
-      group -> (usersWithMessages, groupChatMap)
+    val withGroups = usersWithGroup.collect {
+      case Right((group, users)) =>
+        val usersWithMessages = users.seq.map { user =>
+          val chat = chatService.findUserChat(request.user.id, user.id)
+          val (unread, lastO) = chat.map { chat =>
+            messageService.findUnreadMessagesCount(chat.id, request.user.id) ->
+              messageService.findLastMessage(chat.id)
+          }.getOrElse(0L, None)
+          (user, unread, lastO, chat)
+        }
+        val groupChatMap = chatService.findGroupChatByGroupId(group.id).map(chat =>
+          chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id))
+        ).toMap
+        group -> (usersWithMessages, groupChatMap)
     }.toMap.seq
 
     Ok(writesUsersPerGroups(withoutGroup, withGroups))

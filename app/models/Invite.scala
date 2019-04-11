@@ -10,7 +10,6 @@ case class Invite(
   uuid: String,
   @Key("group_id") groupId: Int,
   @Key("inviter_id") inviterId: Int,
-  @Key("role_id") roleId: Option[Int],
   _id: ObjectId = new ObjectId()
 ) {
   def toJson = {
@@ -19,8 +18,7 @@ case class Invite(
       "last_name" -> lastName,
       "uuid" -> uuid,
       "group_id" -> groupId,
-      "inviter_id" -> inviterId,
-      "role_id" -> roleId
+      "inviter_id" -> inviterId
     )
   }
 }

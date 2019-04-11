@@ -7,11 +7,11 @@ import services.{ChatService, SocketNotificationService, UserService}
 
 @Singleton
 class ChatController @Inject()(
-  authUtils: AuthUtils,
-  chatService: ChatService,
-  socketNotificationService: SocketNotificationService,
-  userService: UserService
-) extends InjectedController {
+                                authUtils: AuthUtils,
+                                chatService: ChatService,
+                                socketNotificationService: SocketNotificationService,
+                                userService: UserService
+                              ) extends InjectedController {
 
   def create = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
@@ -24,7 +24,7 @@ class ChatController @Inject()(
       purpose = (json \ "purpose").asOpt[String]
       if userService.usersSameGroupNonArchive(userIds, groupId)
       ids = userIds.distinct
-      if chatService.createGroupChat(ids, groupId, user._id, name, purpose)
+      if chatService.createGroupChat(ids, Some(groupId), user._id, name, purpose)
     } yield {
       socketNotificationService.newGroupChat(groupId, userIds)
       Ok
@@ -90,11 +90,8 @@ class ChatController @Inject()(
     (for {
       groupId <- user.groupId
       chatId <- (json \ "chat_id").asOpt[Int]
-      chatType@("user" | "group") <- (json \ "chat_type").asOpt[String]
-      chat <- chatType match {
-        case "user" => chatService.findUserChat(user.id, chatId)
-        case "group" => chatService.findGroupChat(chatId, groupId)
-      }
+      //      chatType@("user" | "group") <- (json \ "chat_type").asOpt[String]
+      chat <- chatService.findById(chatId)
     } yield {
       socketNotificationService.typing(groupId, user.id, chat)
       Ok

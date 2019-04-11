@@ -49,12 +49,12 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
     push(1, groupId, Json.obj("id" -> id), userIds.contains, (_: Int) => subscriberService.allSubscribers)
   }
 
-  def newMessage(groupId: Int, chatType: String, message: Message, chat: Chat) = {
+  // TODO need rework of subscribers map For get more control
+  def newMessage(message: Message, chat: Chat) = {
     val json = Json.obj(
-      "chat_type" -> chatType,
       "message" -> Json.toJson(message)(Message.writes(chat))
     )
-    push(0, groupId, json, chat.userIds.contains,
+    push(0, 0, json, chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 
@@ -73,8 +73,7 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   def typing(groupId: Int, userId: Int, chat: Chat) = {
     val json = Json.obj(
       "user_id" -> userId,
-      "chat_id" -> chat.id,
-      "chat_type" -> chat.chatType
+      "chat_id" -> chat.id
     )
     push(20, groupId, json, chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)

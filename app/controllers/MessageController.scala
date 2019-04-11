@@ -11,11 +11,11 @@ import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class MessageController @Inject()(
-  authUtils: AuthUtils,
-  chatService: ChatService,
-  messageService: MessageService,
-  userService: UserService
-) extends InjectedController {
+                                   authUtils: AuthUtils,
+                                   chatService: ChatService,
+                                   messageService: MessageService,
+                                   userService: UserService
+                                 ) extends InjectedController {
 
   def post = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
@@ -35,7 +35,7 @@ class MessageController @Inject()(
               if (
                 userService.findOne(targetUserId).isDefined && {
                   val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-                  messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
+                  messageService.save(filledMessage)(chat).wasAcknowledged()
                 }
               ) {
                 Ok
@@ -45,12 +45,12 @@ class MessageController @Inject()(
             }.getOrElse {
               if (
                 userService.findOne(targetUserId).isDefined &&
-                chatService.createUserChat(user.id, targetUserId, groupId)
+                  chatService.createUserChat(user.id, targetUserId, groupId)
               ) {
                 chatService.findUserChat(user.id, targetUserId).collect { case chat
                   if {
                     val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-                    messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
+                    messageService.save(filledMessage)(chat).wasAcknowledged()
                   } => Ok
                 }.getOrElse(BadRequest)
               } else {
@@ -65,20 +65,76 @@ class MessageController @Inject()(
           chatService.findGroupChat(targetUserId, groupId).collect { case chat
             if {
               val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-              messageService.save(filledMessage)(groupId, "user", chat).wasAcknowledged()
+              messageService.save(filledMessage)(chat).wasAcknowledged()
             } => Ok
           }.getOrElse(BadRequest)
       }
     }).getOrElse(BadRequest)
   }
 
-  def chat(chatId: Int, chatType: String, page: Int) = authUtils.authenticateAction { request =>
+  def postnew = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
-    val messages = (chatType match {
-      case "user" => chatService.findUserChat(user.id, chatId)
-      case "group" => chatService.findById(chatId)
-      case _ => None
-    }).map { chat =>
+    val json = request.body
+
+    (for {
+      groupId <- user.groupId
+      message <- json.asOpt(Message.reads(user.id))
+    } yield {
+      val replyForO = (json \ "reply_for").asOpt[ObjectId]
+      chatService.findById(message.chatId).collect { case chat
+        if {
+          val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+          messageService.save(filledMessage)(chat).wasAcknowledged()
+        } => Ok
+      }.getOrElse(BadRequest)
+    }).getOrElse(BadRequest)
+  }
+
+  def postnewuser = authUtils.authenticateAction(parse.json) { request =>
+    val user = request.user
+    val json = request.body
+
+    (for {
+      groupId <- user.groupId
+      message <- json.asOpt(Message.reads(user.id))
+    } yield {
+      val replyForO = (json \ "reply_for").asOpt[ObjectId]
+      val targetUserId = message.chatId
+      if (userService.findByIdNonArchive(targetUserId).isDefined) {
+        chatService.findUserChat(user.id, targetUserId).map { chat =>
+          if (
+            userService.findOne(targetUserId).isDefined && {
+              val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+              messageService.save(filledMessage)(chat).wasAcknowledged()
+            }
+          ) {
+            Ok(Json.toJson(chat))
+          } else {
+            ResetContent
+          }
+        }.getOrElse {
+          if (
+            userService.findOne(targetUserId).isDefined &&
+              chatService.createUserChat(user.id, targetUserId, groupId)
+          ) {
+            chatService.findUserChat(user.id, targetUserId).collect { case chat
+              if {
+                val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+                messageService.save(filledMessage)(chat).wasAcknowledged()
+              } => Ok(Json.toJson(chat))
+            }.getOrElse(BadRequest)
+          } else {
+            BadRequest
+          }
+        }
+      } else {
+        BadRequest
+      }
+    }).getOrElse(BadRequest)
+  }
+
+  def chat(chatId: Int, page: Int) = authUtils.authenticateAction { request =>
+    val messages = chatService.findById(chatId).map { chat =>
       messageService.findByChatId(chat.id, page)
     }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
     Ok(Json.toJson(messages))
@@ -106,11 +162,11 @@ class MessageController @Inject()(
       oid = new ObjectId(id)
       chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
         (json \ "chat_type").asOpt[String].flatMap {
-        case "user" =>
-          chatService.findById(chatId)
-        case "group" =>
-          chatService.findGroupChat(chatId, groupId)
-        case _ => None
+          case "user" =>
+            chatService.findById(chatId)
+          case "group" =>
+            chatService.findGroupChat(chatId, groupId)
+          case _ => None
         }
       }
       result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
@@ -175,7 +231,7 @@ class MessageController @Inject()(
       if (mode match {
         case 0 => messageService.softDelete(oid) _
         case 1 => messageService.remove(oid) _
-      })(groupId, chat).isUpdateOfExisting
+      }) (groupId, chat).isUpdateOfExisting
     } yield {
       Ok
     }).getOrElse(BadRequest)
