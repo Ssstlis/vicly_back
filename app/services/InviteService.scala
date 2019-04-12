@@ -14,4 +14,5 @@ class InviteService @Inject()(inviteDao: InviteDao) {
   def find(uuid: String) = inviteDao.find(uuid)
 
   def all = inviteDao.all
+
 }

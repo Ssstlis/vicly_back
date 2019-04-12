@@ -62,12 +62,12 @@ class ChatDao @Inject()(
     ))
   }
 
-  def createUserChat(first: Int, second: Int, groupId: Int) = {
-    val chat = Chat(maxId + 1, groupId, List(first, second), "user", None, None)
+  def createUserChat(first: Int, second: Int) = {
+    val chat = Chat(maxId + 1, None, List(first, second), "user", None, None)
     dao.insert(chat).isDefined
   }
 
-  def createGroupChat(userIds: List[Int], groupId: Int, ownerId: ObjectId, name: String, purpose: Option[String] = None) = {
+  def createGroupChat(userIds: List[Int], groupId: Option[Int] = None, ownerId: ObjectId, name: String, purpose: Option[String] = None) = {
     val chat = Chat(maxId + 1, groupId, userIds, "group", Some(false), Some(ownerId), Some(name), purpose)
     dao.insert(chat).isDefined
   }
@@ -78,20 +78,6 @@ class ChatDao @Inject()(
       "chat_type" -> "group",
       "group_id" -> groupId,
       "archive" -> false
-    ))
-  }
-
-  def findByChatAndGroupId(chatId: Int, groupId: Int) = {
-    dao.findOne(MongoDBObject(
-      "chat_id" -> chatId,
-      "group_id" -> groupId,
-      "$or" -> MongoDBList(
-        "$and" -> MongoDBList(
-          "chat_type" -> "group",
-          "archive" -> false,
-        ),
-        "archive" -> false
-      )
     ))
   }
 
