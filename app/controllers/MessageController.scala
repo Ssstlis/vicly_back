@@ -175,6 +175,23 @@ class MessageController @Inject()(
     }).getOrElse(BadRequest)
   }
 
+  def readnew = authUtils.authenticateAction(parse.json) { request =>
+    val json = request.body
+    val user = request.user
+
+    (for {
+      groupId <- user.groupId
+      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      oid = new ObjectId(id)
+      chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
+            chatService.findById(chatId)
+      }
+      result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
+  }
+
   def delivery = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
@@ -193,6 +210,22 @@ class MessageController @Inject()(
         case "group" => chatService.findGroupChat(chatId, groupId)
         case _ => None
       }
+      result <- messageService.delivery(oid, chatId)(groupId, chat) if result.isUpdateOfExisting
+    } yield {
+      Ok
+    }).getOrElse(BadRequest)
+  }
+
+  def deliverynew = authUtils.authenticateAction(parse.json) { request =>
+    val json = request.body
+    val user = request.user
+
+    (for {
+      groupId <- user.groupId
+      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      oid = new ObjectId(id)
+      chatId <- (json \ "chat_id").asOpt[Int]
+      chat <- chatService.findById(chatId)
       result <- messageService.delivery(oid, chatId)(groupId, chat) if result.isUpdateOfExisting
     } yield {
       Ok
