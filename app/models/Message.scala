@@ -50,7 +50,7 @@ trait MessageJson {
     (__ \ "message").read[String] and
     Reads.pure(false) and
     (__ \ "reply_for").readNullable[ObjectId] and
-    (__ \ "id").read[Int] and
+    (__ \ "chat_id").read[Int] and
     Reads.pure(MessageTime()) and
     Reads.pure(None) and
     Reads.pure(None) and
