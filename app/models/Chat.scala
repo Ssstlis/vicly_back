@@ -1,7 +1,7 @@
 package models
 
 import org.bson.types.ObjectId
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{Json, Reads, Writes, __}
 import salat.annotations.Key
 import ru.tochkak.plugin.salat.Binders.objectIdWrites
 

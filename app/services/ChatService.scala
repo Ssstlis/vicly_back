@@ -19,7 +19,10 @@ class ChatService @Inject()(chatDao: ChatDao) {
 
   def findUserChat(first: Int, second: Int) = chatDao.findUserChat(first, second)
 
-  def createUserChat(first: Int, second: Int, groupId: Int) = chatDao.createUserChat(first, second)
+  def createUserChat(first: Int, second: Int, groupId: Int) = {
+    // TODO WebSocket!!!
+    chatDao.createUserChat(first, second)
+  }
 
   def createGroupChat(userIds: List[Int], groupId: Option[Int], ownerId: ObjectId, name: String, purpose: Option[String]) = {
     chatDao.createGroupChat(userIds, groupId, ownerId, name, purpose)

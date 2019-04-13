@@ -72,12 +72,11 @@ class MessageController @Inject()(
     }).getOrElse(BadRequest)
   }
 
-  def postnew = authUtils.authenticateAction(parse.json) { request =>
+  def postnewchat = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
     val json = request.body
 
     (for {
-      groupId <- user.groupId
       message <- json.asOpt(Message.reads(user.id))
     } yield {
       val replyForO = (json \ "reply_for").asOpt[ObjectId]
@@ -108,7 +107,7 @@ class MessageController @Inject()(
               messageService.save(filledMessage)(chat).wasAcknowledged()
             }
           ) {
-            Ok(Json.toJson(chat))
+            Ok
           } else {
             ResetContent
           }
@@ -121,7 +120,7 @@ class MessageController @Inject()(
               if {
                 val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
                 messageService.save(filledMessage)(chat).wasAcknowledged()
-              } => Ok(Json.toJson(chat))
+              } => Ok
             }.getOrElse(BadRequest)
           } else {
             BadRequest
@@ -133,8 +132,16 @@ class MessageController @Inject()(
     }).getOrElse(BadRequest)
   }
 
-  def chat(chatId: Int, page: Int) = authUtils.authenticateAction { request =>
+  def groupChatMessages(chatId: Int, page: Int) = authUtils.authenticateAction { request =>
     val messages = chatService.findById(chatId).map { chat =>
+      messageService.findByChatId(chat.id, page)
+    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
+    Ok(Json.toJson(messages))
+  }
+
+  def userChatMessages(userId: Int, page: Int) = authUtils.authenticateAction { request =>
+    val user = request.user
+    val messages = chatService.findUserChat(user.id, userId).map { chat =>
       messageService.findByChatId(chat.id, page)
     }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
     Ok(Json.toJson(messages))
