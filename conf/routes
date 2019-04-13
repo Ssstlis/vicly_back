@@ -22,10 +22,11 @@ POST        /api/group/set_purpose                         controllers.GroupCont
 
 #Messages
 POST        /api/message/post                              controllers.MessageController.post
-POST        /api/message/postnew                           controllers.MessageController.postnew
+POST        /api/message/postnewchat                       controllers.MessageController.postnewchat
 POST        /api/message/postnewuser                       controllers.MessageController.postnewuser
 GET         /api/message/chat/unread/:id/:chat_type        controllers.MessageController.unread(id: Int, chat_type: String)
-GET         /api/message/chat/:id/:page                    controllers.MessageController.chat(id: Int, page: Int)
+GET         /api/message/chat/group/:chat_id/:page         controllers.MessageController.groupChatMessages(chat_id: Int, page: Int)
+GET         /api/message/chat/user/:user_id/:page          controllers.MessageController.userChatMessages(user_id: Int, page: Int)
 POST        /api/message/read                              controllers.MessageController.read
 POST        /api/message/readnew                           controllers.MessageController.readnew
 POST        /api/message/delivery                          controllers.MessageController.delivery
