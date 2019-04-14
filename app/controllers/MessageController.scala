@@ -2,6 +2,7 @@ package controllers
 
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
+import io.swagger.annotations.Api
 import models.Message
 import org.bson.types.ObjectId
 import play.api.libs.json.Json
@@ -9,6 +10,7 @@ import play.api.mvc.InjectedController
 import services.{ChatService, MessageService, UserService}
 import utils.JsonHelper.ObjectIdFormat
 
+@Api(value = "Messages actions Controller", produces = "application/json")
 @Singleton
 class MessageController @Inject()(
                                    authUtils: AuthUtils,
@@ -77,10 +79,11 @@ class MessageController @Inject()(
     val json = request.body
 
     (for {
+      userGroupId <- user.groupId
       message <- json.asOpt(Message.reads(user.id))
     } yield {
       val replyForO = (json \ "reply_for").asOpt[ObjectId]
-      chatService.findById(message.chatId).collect { case chat
+      chatService.findGroupChat(message.chatId, userGroupId).collect { case chat
         if {
           val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
           messageService.save(filledMessage)(chat).wasAcknowledged()
@@ -191,7 +194,7 @@ class MessageController @Inject()(
       id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
-            chatService.findById(chatId)
+        chatService.findById(chatId)
       }
       result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
     } yield {

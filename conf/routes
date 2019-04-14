@@ -57,3 +57,8 @@ GET         /api/role/remove/:id                           controllers.RoleContr
 GET         /api/role/list                                 controllers.RoleController.list
 GET         /api/role/one/:id                              controllers.RoleController.one(id: Int)
 GET         /api/role/one/:id/no_auth                      controllers.RoleController.oneNoAuth(id: Int)
+
+# Swagger
+GET         /docs/swagger.json                             controllers.ApiHelpController.getResources
+GET         /docs/                                         controllers.Assets.at(path="/public/swagger-ui",file="index.html")
+GET         /docs/*file                                    controllers.Assets.at(path="/public/swagger-ui",file)
