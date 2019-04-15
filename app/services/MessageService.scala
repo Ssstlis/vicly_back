@@ -38,7 +38,7 @@ class MessageService @Inject()(
   def read(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.markRead(id)
     result.foreach(result => if (result.isUpdateOfExisting) {
-      socketNotificationService.markRead(groupId, id, chat.userIds)
+      socketNotificationService.markRead(id, chat)
     })
     result
   }
@@ -46,7 +46,7 @@ class MessageService @Inject()(
   def delivery(id: ObjectId, chatId: Int)(groupId: Int, chat: Chat) = {
     val result = messageDao.markDelivery(id, chatId)
     result.foreach(result => if (result.isUpdateOfExisting) {
-      socketNotificationService.markDelivery(groupId, id, chat.userIds)
+      socketNotificationService.markDelivery(id, chat)
     })
     result
   }
