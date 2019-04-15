@@ -30,6 +30,8 @@ class ChatService @Inject()(chatDao: ChatDao) {
 
   def findGroupChat(id: Int, groupId: Int) = chatDao.findGroupChat(id, groupId)
 
+  def findGroupChatWithUser(userId: Int, chatId: Int) = chatDao.findGroupChatWithUser(userId, chatId)
+
   def updateUsers(chatId: Int, userIds: List[Int]) = chatDao.updateUsers(chatId, userIds)
 
   def archive(chatId: Int) = chatDao.archive(chatId)

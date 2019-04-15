@@ -40,6 +40,16 @@ class ChatDao @Inject()(
     dao.find(MongoDBObject("user_ids" -> userId)).toList
   }
 
+  def findGroupChatWithUser(userId: Int, chatId: Int) = {
+    dao.findOne(
+      MongoDBObject(
+        "user_ids" -> MongoDBObject("$in" -> MongoDBList(userId)),
+        "chat_type" -> "group",
+        "id" -> chatId
+      )
+    )
+  }
+
   def findGroupChatByGroupId(groupId: Int) = {
     dao.find(MongoDBObject(
       "group_id" -> groupId,
