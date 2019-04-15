@@ -102,7 +102,7 @@ class UserController @Inject()(
           (user, unread, lastO, chat)
         }
         val groupChatMap = chatService.findGroupChatByGroupId(group.id)
-          .filter(chat => chat.groupId == user.groupId)
+          .filter(chat => chat.userIds.contains(user.id))
           .map(chat =>
           chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id), chat)
         ).toMap

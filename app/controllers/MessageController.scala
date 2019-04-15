@@ -83,7 +83,7 @@ class MessageController @Inject()(
       message <- json.asOpt(Message.reads(user.id))
     } yield {
       val replyForO = (json \ "reply_for").asOpt[ObjectId]
-      chatService.findGroupChat(message.chatId, userGroupId).collect { case chat
+      chatService.findGroupChatWithUser(user.id, message.chatId).collect { case chat
         if {
           val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
           messageService.save(filledMessage)(chat).wasAcknowledged()
