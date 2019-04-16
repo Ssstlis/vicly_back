@@ -2,8 +2,6 @@ package controllers
 
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
-import io.swagger.annotations._
-import io.swagger.models.Response
 import models.User
 import models.json.UserJson._
 import pdi.jwt.JwtJson
@@ -12,7 +10,6 @@ import play.api.mvc.InjectedController
 import services._
 import utils.CollectionHelper.TraversableOnceHelper
 
-@Api(value = "User actions Controller", produces = "application/json")
 @Singleton
 class UserController @Inject()(
                                 authUtils: AuthUtils,
@@ -33,14 +30,6 @@ class UserController @Inject()(
     }(_ => BadRequest)
   }
 
-  @ApiOperation(
-    value = "Login user",
-    notes = "Return user object with token",
-    response = classOf[models.User],
-  )
-  @ApiResponses(Array(
-    new ApiResponse(code = 400, message = "Invalid login or password"),
-    new ApiResponse(code = 200, message = "Login successful")))
   def login = Action(parse.json) { request =>
     val json = request.body
     (for {login <- (json \ "login").asOpt[String]

@@ -1,6 +1,5 @@
 package models
 
-import io.swagger.annotations._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
@@ -11,28 +10,31 @@ import utils.JsonHelper.ObjectIdFormat
 
 import scala.annotation.meta.field
 
-@ApiModel("User")
 case class User(
-                 @(ApiModelProperty@field) _id: ObjectId,
-                 @(ApiModelProperty@field) @Key("first_name") firstName: String,
-                 @(ApiModelProperty@field) @Key("last_name") lastName: String,
-                 @(ApiModelProperty@field) @Key("group_id") groupId: Option[Int],
-                 @(ApiModelProperty@field) password: String,
-                 @(ApiModelProperty@field) login: String,
-                 @(ApiModelProperty@field) active: Boolean,
-                 @(ApiModelProperty@field) @Key("join_time") joinTime: Int,
-                 @(ApiModelProperty@field) id: Int,
-                 @(ApiModelProperty@field) @Key("last_activity") lastActivity: Int = 0,
-                 @(ApiModelProperty@field) archive: Boolean = false,
-                 @(ApiModelProperty@field) avatar: String = "",
-                 @(ApiModelProperty@field) @Key("role_id") roleId: Int = 0
+                 _id: ObjectId,
+                 @Key("first_name") firstName: String,
+                 surname: Option[String],
+                 @Key("last_name") lastName: String,
+                 position: Option[String],
+                 @Key("group_id") groupId: Option[Int],
+                 password: String,
+                 login: String,
+                 active: Boolean,
+                 @Key("join_time") joinTime: Int,
+                 id: Int,
+                 @Key("last_activity") lastActivity: Int = 0,
+                 archive: Boolean = false,
+                 avatar: String = "",
+                 @Key("role_id") roleId: Int = 0
                ) {
   def toJson = {
     Json.obj(
       "_id" -> _id,
       "id" -> id,
       "first_name" -> firstName,
+      "surname" -> surname,
       "last_name" -> lastName,
+      "position" -> position,
       "group_id" -> groupId,
       "login" -> login,
       "is_active" -> active,
@@ -64,7 +66,9 @@ trait UserJson {
   def reads(id: => Int): Reads[User] = (
     Reads.pure(new ObjectId()) and
       ((__ \ "first_name").read[String] orElse Reads.pure("")) and
+      (__ \ "surname").readNullable[String] and
       ((__ \ "last_name").read[String] orElse Reads.pure("")) and
+      (__ \ "surname").readNullable[String] and
       (__ \ "group_id").readNullable[Int] and
       (__ \ "password").read[String] and
       (__ \ "login").read[String] and

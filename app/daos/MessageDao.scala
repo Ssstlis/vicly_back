@@ -113,7 +113,7 @@ class MessageDao @Inject()(
     )
   }
 
-  def markDelivery(oid: ObjectId, chatId: Int) = {
+  def markDelivery(oid: ObjectId) = {
     findById(oid).map(message =>
       dao.update(
         MongoDBObject("_id" -> oid),

@@ -27,9 +27,9 @@ POST        /api/message/postnewuser                       controllers.MessageCo
 GET         /api/message/chat/unread/:id/:chat_type        controllers.MessageController.unread(id: Int, chat_type: String)
 GET         /api/message/chat/group/:chat_id/:page         controllers.MessageController.groupChatMessages(chat_id: Int, page: Int)
 GET         /api/message/chat/user/:user_id/:page          controllers.MessageController.userChatMessages(user_id: Int, page: Int)
-POST        /api/message/read                              controllers.MessageController.read
+#POST        /api/message/read                              controllers.MessageController.read
 POST        /api/message/readnew                           controllers.MessageController.readnew
-POST        /api/message/delivery                          controllers.MessageController.delivery
+#POST        /api/message/delivery                          controllers.MessageController.delivery
 POST        /api/message/deliverynew                       controllers.MessageController.deliverynew
 POST        /api/message/delete                            controllers.MessageController.delete
 POST        /api/message/change                            controllers.MessageController.change
@@ -57,8 +57,3 @@ GET         /api/role/remove/:id                           controllers.RoleContr
 GET         /api/role/list                                 controllers.RoleController.list
 GET         /api/role/one/:id                              controllers.RoleController.one(id: Int)
 GET         /api/role/one/:id/no_auth                      controllers.RoleController.oneNoAuth(id: Int)
-
-# Swagger
-GET         /docs/swagger.json                             controllers.ApiHelpController.getResources
-GET         /docs/                                         controllers.Assets.at(path="/public/swagger-ui",file="index.html")
-GET         /docs/*file                                    controllers.Assets.at(path="/public/swagger-ui",file)

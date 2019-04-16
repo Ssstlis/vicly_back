@@ -2,7 +2,6 @@ package controllers
 
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
-import io.swagger.annotations.Api
 import models.Message
 import org.bson.types.ObjectId
 import play.api.libs.json.Json
@@ -10,7 +9,6 @@ import play.api.mvc.InjectedController
 import services.{ChatService, MessageService, UserService}
 import utils.JsonHelper.ObjectIdFormat
 
-@Api(value = "Messages actions Controller", produces = "application/json")
 @Singleton
 class MessageController @Inject()(
                                    authUtils: AuthUtils,
@@ -162,67 +160,27 @@ class MessageController @Inject()(
     Ok(Json.toJson(messages))
   }
 
-  def read = authUtils.authenticateAction(parse.json) { request =>
-    val json = request.body
-    val user = request.user
-
-    (for {
-      groupId <- user.groupId
-      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
-      oid = new ObjectId(id)
-      chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
-        (json \ "chat_type").asOpt[String].flatMap {
-          case "user" =>
-            chatService.findById(chatId)
-          case "group" =>
-            chatService.findGroupChat(chatId, groupId)
-          case _ => None
-        }
-      }
-      result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
-    } yield {
-      Ok
-    }).getOrElse(BadRequest)
-  }
-
   def readnew = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
 
     (for {
       groupId <- user.groupId
-      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      id <- (json \ "message_id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
         chatService.findById(chatId)
       }
-      result <- messageService.read(oid)(groupId, chat) if result.isUpdateOfExisting
+      message <- messageService.findById(new ObjectId(id))
     } yield {
-      Ok
-    }).getOrElse(BadRequest)
-  }
-
-  def delivery = authUtils.authenticateAction(parse.json) { request =>
-    val json = request.body
-    val user = request.user
-
-    (for {
-      groupId <- user.groupId
-      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
-      oid = new ObjectId(id)
-      chatId <- (json \ "chat_id").asOpt[Int]
-      chat <- (json \ "chat_type").asOpt[String].flatMap {
-        case "user" => {
-          messageService.findChatIdByObjectId(oid).flatMap(chatId =>
-            chatService.findById(chatId)
-          )
-        }
-        case "group" => chatService.findGroupChat(chatId, groupId)
-        case _ => None
+      if (message.from != user.id && chat.userIds.contains(user.id)) {
+        messageService.read(oid)(chat).collect {
+          case result
+            if result.isUpdateOfExisting => Ok
+        }.getOrElse(BadRequest)
+      } else {
+        Forbidden
       }
-      result <- messageService.delivery(oid, chatId)(groupId, chat) if result.isUpdateOfExisting
-    } yield {
-      Ok
     }).getOrElse(BadRequest)
   }
 
@@ -232,13 +190,21 @@ class MessageController @Inject()(
 
     (for {
       groupId <- user.groupId
-      id <- (json \ "id").asOpt[String] if ObjectId.isValid(id)
+      id <- (json \ "message_id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
-      chatId <- (json \ "chat_id").asOpt[Int]
-      chat <- chatService.findById(chatId)
-      result <- messageService.delivery(oid, chatId)(groupId, chat) if result.isUpdateOfExisting
+      chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
+        chatService.findById(chatId)
+      }
+      message <- messageService.findById(new ObjectId(id))
     } yield {
-      Ok
+      if (message.from != user.id && chat.userIds.contains(user.id)) {
+        messageService.delivery(oid)(chat).collect {
+          case result
+            if result.isUpdateOfExisting => Ok
+        }.getOrElse(BadRequest)
+      } else {
+        Forbidden
+      }
     }).getOrElse(BadRequest)
   }
 
