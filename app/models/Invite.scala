@@ -6,7 +6,9 @@ import salat.annotations.Key
 
 case class Invite(
   @Key("first_name") firstName: String,
+  surname: Option[String],
   @Key("last_name") lastName: String,
+  position: Option[String],
   uuid: String,
   @Key("group_id") groupId: Int,
   @Key("inviter_id") inviterId: Int,
@@ -15,7 +17,9 @@ case class Invite(
   def toJson = {
     Json.obj(
       "first_name" -> firstName,
+      "surname" -> surname,
       "last_name" -> lastName,
+      "position" -> position,
       "uuid" -> uuid,
       "group_id" -> groupId,
       "inviter_id" -> inviterId

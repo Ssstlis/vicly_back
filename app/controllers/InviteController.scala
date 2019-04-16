@@ -37,10 +37,12 @@ class InviteController @Inject()(
       group <- groupO.orElse(owningGroups.headOption).orElse(groups.find(_.id == groupId))
       firstName <- (json \ "first_name").asOpt[String]
       lastName <- (json \ "last_name").asOpt[String]
+      surname <- (json \ "surname").asOpt[String]
+      position <- (json \ "position").asOpt[String]
     } yield {
       val uuid = randomUUID().toString
 
-      val invite = Invite(firstName, lastName, uuid, group.id, user.id)
+      val invite = Invite(firstName, Some(surname), lastName, Some(position), uuid, group.id, user.id)
       if (inviteService.create(invite).wasAcknowledged()) {
         Ok(Json.obj("invite_id" -> uuid))
       } else {
@@ -72,7 +74,9 @@ class InviteController @Inject()(
       val user = User(
         new ObjectId(),
         invite.firstName,
+        invite.surname,
         invite.lastName,
+        invite.position,
         Some(invite.groupId),
         password.md5.md5.md5,
         login,

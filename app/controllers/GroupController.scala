@@ -9,10 +9,21 @@ import services.GroupService
 
 @Singleton
 class GroupController @Inject()(
-  authUtils: AuthUtils,
-  groupService: GroupService
-) extends InjectedController {
+                                 authUtils: AuthUtils,
+                                 groupService: GroupService
+                               ) extends InjectedController {
 
+  /**
+    * @api {POST} /api/group/create  Create workgroup
+    * @apiName Create workgroup
+    * @apiGroup Workgroups
+    * @apiParam {String}        name Title of new workgoup.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "name":"New Workgroup!!!"
+    *                  }
+    * @apiDescription Create new workgroup with provided name in same group with user, which make request.
+    */
   def create = authUtils.authenticateAction(parse.json) { request =>
     (request.body \ "name").asOpt[String].map { name =>
       val user = request.user
@@ -21,6 +32,29 @@ class GroupController @Inject()(
     }.getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/group/list  Return all groups
+    * @apiName Return all groups
+    * @apiGroup Workgroups
+    * @apiSuccessExample {json} Success-Response:
+    *        [
+    *                   {
+    *                    "id": 1,
+    *                    "name": "test",
+    *                    "created": 1542470490,
+    *                    "owner": "5c55d1c12cf1d52f70fb15d7",
+    *                    "purpose": "Test purpose"
+    *                   },
+    *                   {
+    *                    "id": 2,
+    *                    "name": "Бухгалтерия",
+    *                    "created": 1542557813,
+    *                    "owner": "5c55d1c12cf1d52f70fb15d7",
+    *                    "purpose": null
+    *                   }
+    *        ]
+    * @apiDescription Create new workgroup with provided name in same group with user, which make request.
+    */
   def list = authUtils.authenticateAction {
     Ok(Json.toJson(groupService.all))
   }

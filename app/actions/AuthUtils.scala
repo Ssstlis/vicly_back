@@ -5,7 +5,6 @@ import ch.qos.logback.core.status.ErrorStatus
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import com.google.inject.{Inject, Singleton}
-import io.swagger.annotations.{ApiResponse, ApiResponses}
 import org.bson.types.ObjectId
 import pdi.jwt.JwtJson
 import play.api.mvc._

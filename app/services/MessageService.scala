@@ -8,9 +8,9 @@ import utils.Helper.StringExtended
 
 @Singleton
 class MessageService @Inject()(
-  messageDao: MessageDao,
-  socketNotificationService: SocketNotificationService
-)(implicit configService: ConfigService) {
+                                messageDao: MessageDao,
+                                socketNotificationService: SocketNotificationService
+                              )(implicit configService: ConfigService) {
 
   implicit class MessageExtended(m: Message) {
     def encode = m.copy(text = m.text.encodeToken)
@@ -35,7 +35,9 @@ class MessageService @Inject()(
 
   def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int).flatMap(_.decode)
 
-  def read(id: ObjectId)(groupId: Int, chat: Chat) = {
+  def findById(id: ObjectId) = messageDao.findById(id).flatMap(_.decode)
+
+  def read(id: ObjectId)(chat: Chat) = {
     val result = messageDao.markRead(id)
     result.foreach(result => if (result.isUpdateOfExisting) {
       socketNotificationService.markRead(id, chat)
@@ -43,8 +45,8 @@ class MessageService @Inject()(
     result
   }
 
-  def delivery(id: ObjectId, chatId: Int)(groupId: Int, chat: Chat) = {
-    val result = messageDao.markDelivery(id, chatId)
+  def delivery(id: ObjectId)(chat: Chat) = {
+    val result = messageDao.markDelivery(id)
     result.foreach(result => if (result.isUpdateOfExisting) {
       socketNotificationService.markDelivery(id, chat)
     })

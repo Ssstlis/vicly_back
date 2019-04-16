@@ -13,6 +13,21 @@ class ChatController @Inject()(
                                 userService: UserService
                               ) extends InjectedController {
 
+  /**
+    * @api {POST} /api/chat/create  Create new chat
+    * @apiName Create new chat
+    * @apiGroup Chats
+    * @apiParam {Array[Int]}    user_ids Chat members user ids.
+    * @apiParam {String}        name     Title of chat.
+    * @apiParam {String}           purpose  Purpose for chat.
+    * @apiParamExample {json} Request-body:
+    * {
+    *     "user_ids":[54,12,6],
+    *     "name":"New LOL chat",
+    *     "purpose":"Fake purpose!"
+    * }
+    * @apiDescription Create new chat in same group with user, which make request.
+    */
   def create = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
     val json = request.body
@@ -31,6 +46,21 @@ class ChatController @Inject()(
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/chat/add  Add new user in chat
+    * @apiName  Add new user in chat
+    * @apiGroup Chats
+    * @apiParam {Array[Int]}    user_ids Chat members user ids.
+    * @apiParam {String}        name     Title of chat.
+    * @apiParam {String}           purpose  Purpose for chat.
+    * @apiParamExample {json} Request-body:
+    * {
+    *     "user_ids":[54,12,6],
+    *     "name":"New LOL chat",
+    *     "purpose":"Fake purpose!"
+    * }
+    * @apiDescription Create new chat in same group with user, which make request.
+    */
   def add = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
