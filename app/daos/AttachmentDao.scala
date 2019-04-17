@@ -42,8 +42,8 @@ class AttachmentDao @Inject()(
   }
 
   def saveFile(from: String, path: String, filename: String, userId: Int, size: Long) = {
-    val result = (mkdir(path) #&& cp(from, s"$path/$filename") !) == 0
-    path.split("/").lastOption.collect { case uuid if result =>
+    val result = mkdir(path) #&& cp(from, s"$path/$filename") !
+    path.split("/").lastOption.collect { case uuid if result == 0 =>
         dao.save(Attachment(new ObjectId(), uuid, userId, filename, size))
     }.exists(_.wasAcknowledged)
   }

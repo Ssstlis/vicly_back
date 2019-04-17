@@ -2,23 +2,25 @@ package controllers
 
 import java.util.UUID.randomUUID
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
-
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
+import models.SeaweedResponse
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.InjectedController
 import services.{AttachmentService, UserService}
 
+import scala.util.{Failure, Success}
+
 @Singleton
 class AttachmentController @Inject()(
-  attachmentService: AttachmentService,
-  authUtils: AuthUtils,
-  config: Configuration,
-  userService: UserService
-)(implicit ec: ExecutionContext) extends InjectedController {
+                                      attachmentService: AttachmentService,
+                                      authUtils: AuthUtils,
+                                      config: Configuration,
+                                      userService: UserService
+                                    )(implicit ec: ExecutionContext) extends InjectedController {
 
   val path = config.get[String]("path.upload")
 
@@ -37,6 +39,25 @@ class AttachmentController @Inject()(
       if (isAvatar == 1 && file.contentType.exists(_.contains("image"))) userService.setAvatar(user.id, uuid)(groupId)
       Ok(uuid)
     }).getOrElse(BadRequest)
+  }
+
+  def uploadnew = Action.async(parse.multipartFormData) { request =>
+    request.body.file("file").map { file =>
+      attachmentService.saveFileNew(5, file.ref.toFile).map { status =>
+        Ok(Json.toJson("status"-> status))
+      }
+    }.getOrElse(Future.successful(BadRequest))
+    //    val user = request.user
+    //    request.body.file("file").map { file =>
+    //      attachmentService.saveFileNew(5, file.ref.toFile)
+    //        .map { response =>
+    ////          response.json.asOpt(SeaweedResponse.reads()).map { seaweedresp =>
+    //            Ok
+    //          }.getOrElse(Forbidden)
+    //        }
+    //    }.getOrElse(Future {
+    //      NotFound
+    //    })
   }
 
   def download(uuid: String) = authUtils.authenticateAction { request =>

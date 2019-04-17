@@ -46,6 +46,7 @@ GET         /ws/:token                                     controllers.WsControl
 
 #Attachments
 POST        /api/attachment/upload/:is_avatar              controllers.AttachmentController.upload(is_avatar: Int)
+POST        /api/attachment/uploadnew                      controllers.AttachmentController.uploadnew
 GET         /api/attachment/download/:uuid                 controllers.AttachmentController.download(uuid: String)
 GET         /api/attachment/list                           controllers.AttachmentController.list
 GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)

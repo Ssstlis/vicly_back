@@ -33,8 +33,8 @@ class UserController @Inject()(
   def login = Action(parse.json) { request =>
     val json = request.body
     (for {login <- (json \ "login").asOpt[String]
-      password <- (json \ "password").asOpt[String]
-      user <- userService.findByLoginAndPassword(login, password)
+          password <- (json \ "password").asOpt[String]
+          user <- userService.findByLoginAndPassword(login, password)
     } yield {
       userService.setActive(user)
       userService.updateActivity(user.id)(user.groupId)
@@ -93,8 +93,8 @@ class UserController @Inject()(
         val groupChatMap = chatService.findGroupChatByGroupId(group.id)
           .filter(chat => chat.userIds.contains(user.id))
           .map(chat =>
-          chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id), chat)
-        ).toMap
+            chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id), chat)
+          ).toMap
         group -> (usersWithMessages, groupChatMap)
     }.toMap.seq
 
