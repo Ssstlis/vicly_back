@@ -10,7 +10,7 @@ GET         /api/user/clear_status                         controllers.UserContr
 GET         /api/user/remove_avatar                        controllers.UserController.removeAvatar
 
 #Invite
-POST        /api/invite                                    controllers.InviteController.create(group_id: Option[Int])
+POST        /api/invite                                    controllers.InviteController.create()
 GET         /api/invite/list                               controllers.InviteController.list
 GET         /api/invite/:uuid                              controllers.InviteController.one(uuid: String)
 POST        /api/invite/signup                             controllers.InviteController.signup
@@ -45,11 +45,10 @@ POST        /api/chat/archive                              controllers.ChatContr
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)
 
 #Attachments
-POST        /api/attachment/upload/:is_avatar              controllers.AttachmentController.upload(is_avatar: Int)
-POST        /api/attachment/uploadnew                      controllers.AttachmentController.uploadnew
-GET         /api/attachment/download/:uuid                 controllers.AttachmentController.download(uuid: String)
+POST        /api/attachment/uploadnew                      controllers.AttachmentController.uploadnew(is_avatar: Option[Int])
+GET         /api/attachment/download/:id                   controllers.AttachmentController.download(id: String, width: Option[Int])
 GET         /api/attachment/list                           controllers.AttachmentController.list
-GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)
+#GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)
 
 #Role
 GET         /api/role/create/:description                  controllers.RoleController.create(description: String)

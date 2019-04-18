@@ -13,43 +13,34 @@ import salat.dao.{ModelCompanion, SalatDAO}
 
 @Singleton
 class AttachmentDao @Inject()(
-  mongoContext: MongoContext,
-  playSalat: PlaySalat
-) extends ModelCompanion[Attachment, ObjectId] {
+                               mongoContext: MongoContext,
+                               playSalat: PlaySalat
+                             ) extends ModelCompanion[Attachment, ObjectId] {
 
   import mongoContext._
 
-  val dao = new SalatDAO[Attachment, ObjectId](playSalat.collection("attachment", "ms")){}
+  val dao = new SalatDAO[Attachment, ObjectId](playSalat.collection("attachment", "ms")) {}
 
-  private def sh(cmd: String) = {
-    Seq("sh", "-c") :+ cmd
+  //  def saveFile(from: String, path: String, filename: String, userId: Int, size: Long) = {
+  //    val result = mkdir(path) #&& cp(from, s"$path/$filename") !
+  //    path.split("/").lastOption.collect { case uuid if result == 0 =>
+  //        dao.save(Attachment(new ObjectId(), uuid, userId, filename, size))
+  //    }.exists(_.wasAcknowledged)
+  //  }
+
+  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean) = {
+    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar))
+    if( result.isDefined) {
+      result.flatMap { objectId =>
+        dao.findOneById(objectId)
+      }
+    } else {
+      None
+    }
   }
 
-  private def mkdir(path: String) = {
-    sh(s"mkdir -p $path")
-  }
-
-  private def cp(from: String, to: String) = {
-    sh(s"cp $from $to")
-  }
-
-  private def filename(path: String) = {
-    sh(s"ls $path -1") !!
-  }
-
-  private def rm(path: String) = {
-    sh(s"sudo rm -rf $path") !
-  }
-
-  def saveFile(from: String, path: String, filename: String, userId: Int, size: Long) = {
-    val result = mkdir(path) #&& cp(from, s"$path/$filename") !
-    path.split("/").lastOption.collect { case uuid if result == 0 =>
-        dao.save(Attachment(new ObjectId(), uuid, userId, filename, size))
-    }.exists(_.wasAcknowledged)
-  }
-
-  def find(uuid: String) = {
-    dao.findOne(MongoDBObject("uuid" -> uuid))
+  def find(id: String) = {
+    dao.findOne(MongoDBObject("_id" -> new ObjectId(id)))
   }
 
   def findByUserId(uuid: String, userId: Int) = {
@@ -65,14 +56,14 @@ class AttachmentDao @Inject()(
     )).toList
   }
 
-  def remove(userId: Int, uuid: String, path: String): Option[Boolean] = {
-    for {
-      attachment <- findByUserId(uuid, userId)
-      filename <- Try(filename(path)).toOption
-    } yield {
-      rm(s"$path/$filename") == 0 &&
-      rm(path) == 0 &&
-      remove(attachment).isUpdateOfExisting
-    }
-  }
+//  def remove(userId: Int, uuid: String, path: String): Option[Boolean] = {
+//    for {
+//      attachment <- findByUserId(uuid, userId)
+//      filename <- Try(filename(path)).toOption
+//    } yield {
+//      rm(s"$path/$filename") == 0 &&
+//        rm(path) == 0 &&
+//        remove(attachment).isUpdateOfExisting
+//    }
+//  }
 }

@@ -30,10 +30,10 @@ trait SeaweedResponseJson {
 
   def reads(): Reads[SeaweedResponse] = (
       (__ \ "eTag").read[String] and
-      (__ \ "fileId").read[String]  and
+      (__ \ "fid").read[String]  and
       (__ \ "fileName").read[String] and
       (__ \ "fileUrl").read[String] and
-      (__ \ "fileSize").read[Int]
+      (__ \ "size").read[Int]
     ) (SeaweedResponse.apply _)
 }
 

@@ -119,15 +119,16 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
     push(31, groupId, Json.obj("user_id" -> userId))
   }
 
-  def userSetAvatar(groupId: Int, userId: Int, uuid: String) = {
+  def userSetAvatar(userId: Int, avatar_id: String) = {
     val json = Json.obj(
       "user_id" -> userId,
-      "uuid" -> uuid
+      "avatar_id" -> avatar_id
     )
-    push(32, groupId, json)
+    push(32, 0, json, _ => true,
+      (_: Int) => subscriberService.allSubscribers)
   }
 
   def userRemoveAvatar(groupId: Int, userId: Int) = {
-    push(33, groupId, Json.obj("user_id" -> userId))
+    push(33, 0, Json.obj("user_id" -> userId))
   }
 }
