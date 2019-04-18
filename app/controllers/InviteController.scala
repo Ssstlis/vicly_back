@@ -14,27 +14,18 @@ import utils.Helper.{DateTimeExtended, StringExtended}
 
 @Singleton
 class InviteController @Inject()(
-  authUtils: AuthUtils,
-  groupService: GroupService,
-  inviteService: InviteService,
-  userService: UserService
-) extends InjectedController {
+                                  authUtils: AuthUtils,
+                                  groupService: GroupService,
+                                  inviteService: InviteService,
+                                  userService: UserService
+                                ) extends InjectedController {
 
-  def create(groupIdO: Option[Int]) = authUtils.authenticateAction(parse.json) { request =>
+  def create() = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
 
-    lazy val groups = groupService.all.sortBy(_.id)
-
-    lazy val owningGroups = groups.filter(_.owner == user._id)
-
-    lazy val groupO = groupIdO.flatMap { groupId =>
-      groups.find(_.id == groupId)
-    }
-
     (for {
-      groupId <- user.groupId
-      group <- groupO.orElse(owningGroups.headOption).orElse(groups.find(_.id == groupId))
+      groupId <- (json \ "group_id").asOpt[Int]
       firstName <- (json \ "first_name").asOpt[String]
       lastName <- (json \ "last_name").asOpt[String]
       surname <- (json \ "surname").asOpt[String]
@@ -42,12 +33,14 @@ class InviteController @Inject()(
     } yield {
       val uuid = randomUUID().toString
 
-      val invite = Invite(firstName, Some(surname), lastName, Some(position), uuid, group.id, user.id)
-      if (inviteService.create(invite).wasAcknowledged()) {
-        Ok(Json.obj("invite_id" -> uuid))
-      } else {
-        NotImplemented
-      }
+      groupService.findById(groupId).collect { case group =>
+        val invite = Invite(firstName, Some(surname), lastName, Some(position), uuid, group.id, user.id)
+        if (inviteService.create(invite).wasAcknowledged()) {
+          Ok(Json.obj("invite_id" -> uuid))
+        } else {
+          NotImplemented
+        }
+      }.getOrElse(BadRequest)
     }).getOrElse(BadRequest)
   }
 

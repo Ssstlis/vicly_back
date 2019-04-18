@@ -3,24 +3,29 @@ package models
 import org.bson.types.ObjectId
 import play.api.libs.json.{Json, Writes}
 import salat.annotations.Key
+import utils.JsonHelper.ObjectIdFormat
 
 case class Attachment(
   _id: ObjectId,
-  uuid: String,
+  fid: String,
   @Key("user_id") userId: Int,
   filename: String,
   size: Long,
-  timestamp: Int = (System.currentTimeMillis() / 1000).toInt
+  @Key("is_avatar")isAvatar: Boolean,
+  timestamp: Int = (System.currentTimeMillis() / 1000).toInt,
+
 )
 
 trait AttachmentJson {
   implicit val writes: Writes[Attachment] = (a: Attachment) => {
     Json.obj(
-      "uuid" -> a.uuid,
+      "id" -> a._id,
+      "fid" -> a.fid,
       "user_id" -> a.userId,
       "filename" -> a.filename,
       "size" -> a.size,
-      "timestamp" -> a.timestamp
+      "timestamp" -> a.timestamp,
+      "is_avatar" -> a.isAvatar
     )
   }
 }
