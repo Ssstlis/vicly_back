@@ -39,7 +39,7 @@ class AttachmentService @Inject()(
   //    wsClient.url("http://localhost:9001/uploadTransfer".post(s)
   //  }
 
-  val seaweedfs_url="http://80.241.209.42"
+  val seaweedfs_url="http://seaweedfs"
 
   def saveFileNew(file: File, originalFilename: String, userId: Int, isAvatar: Boolean) = {
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
