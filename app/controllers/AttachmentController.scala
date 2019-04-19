@@ -81,16 +81,18 @@ class AttachmentController @Inject()(
 
   def downloadAvatar(userId: Int, width: Option[Int]) = authUtils.authenticateAction.async { request =>
     userService.findOne(userId).map { user =>
-      attachmentService.getFileAvatar(user.avatar, width).collect { case file =>
-        file.map { optStream =>
-          optStream.map { stream =>
-            Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
-          }.getOrElse(Gone)
-        }
-      }.getOrElse(Future {
-        NotFound
-      })
-    }.getOrElse(Future {NotFound})
+      user.avatar.map { avatar =>
+        attachmentService.getFileAvatar(avatar, width).collect { case file =>
+          file.map { optStream =>
+            optStream.map { stream =>
+              Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
+            }.getOrElse(Gone)
+          }
+        }.getOrElse(Future.successful(NotFound))
+      }.getOrElse(Future.successful(NotFound))
+    }.getOrElse(Future {
+      NotFound
+    })
   }
 
   def list = authUtils.authenticateAction { request =>

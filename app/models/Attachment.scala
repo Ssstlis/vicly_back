@@ -20,7 +20,6 @@ trait AttachmentJson {
   implicit val writes: Writes[Attachment] = (a: Attachment) => {
     Json.obj(
       "id" -> a._id,
-      "fid" -> a.fid,
       "user_id" -> a.userId,
       "filename" -> a.filename,
       "size" -> a.size,
