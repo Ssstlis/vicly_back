@@ -30,7 +30,7 @@ class AttachmentDao @Inject()(
 
   def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean) = {
     val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar))
-    if( result.isDefined) {
+    if (result.isDefined) {
       result.flatMap { objectId =>
         dao.findOneById(objectId)
       }
@@ -40,7 +40,12 @@ class AttachmentDao @Inject()(
   }
 
   def find(id: String) = {
-    dao.findOne(MongoDBObject("_id" -> new ObjectId(id)))
+    try {
+      val objectId = new ObjectId(id)
+      dao.findOne(MongoDBObject("_id" -> objectId))
+    } catch {
+      case _:IllegalArgumentException => None
+    }
   }
 
   def findByUserId(uuid: String, userId: Int) = {
@@ -56,14 +61,14 @@ class AttachmentDao @Inject()(
     )).toList
   }
 
-//  def remove(userId: Int, uuid: String, path: String): Option[Boolean] = {
-//    for {
-//      attachment <- findByUserId(uuid, userId)
-//      filename <- Try(filename(path)).toOption
-//    } yield {
-//      rm(s"$path/$filename") == 0 &&
-//        rm(path) == 0 &&
-//        remove(attachment).isUpdateOfExisting
-//    }
-//  }
+  //  def remove(userId: Int, uuid: String, path: String): Option[Boolean] = {
+  //    for {
+  //      attachment <- findByUserId(uuid, userId)
+  //      filename <- Try(filename(path)).toOption
+  //    } yield {
+  //      rm(s"$path/$filename") == 0 &&
+  //        rm(path) == 0 &&
+  //        remove(attachment).isUpdateOfExisting
+  //    }
+  //  }
 }

@@ -39,13 +39,15 @@ class AttachmentService @Inject()(
   //    wsClient.url("http://localhost:9001/uploadTransfer".post(s)
   //  }
 
+  val seaweedfs_url="http://80.241.209.42"
+
   def saveFileNew(file: File, originalFilename: String, userId: Int, isAvatar: Boolean) = {
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
     val dataPart = DataPart("key", "value")
 
 
 
-    ws.url("http://localhost:9333/submit")
+    ws.url(seaweedfs_url+":9333/submit")
       .withRequestTimeout(30.seconds)
       .post(Source(filePart :: dataPart :: Nil))
       .map { response =>
@@ -65,10 +67,26 @@ class AttachmentService @Inject()(
       }
   }
 
-  def getFile(id: String, width: Option[Int]) = {
+  def getFile(id: String) = {
     attachmentDao.find(id)
       .collect { case attachment =>
-        val url = s"http://localhost:8080/${attachment.fid}${if (width.isDefined) "?width=" + width.get  else ""}"
+        val url = s"${seaweedfs_url}:8080/${attachment.fid}}"
+        ws.url(url)
+          .withMethod("GET")
+          .stream()
+          .map { response =>
+            if (response.status < 300 && response.status >= 200)
+              Some(response.bodyAsSource)
+            else
+              None
+          }
+      }
+  }
+
+  def getFileAvatar(id: String, width: Option[Int]) = {
+    attachmentDao.find(id)
+      .collect { case attachment =>
+        val url = s"${seaweedfs_url}:8080/${attachment.fid}${if (width.isDefined) "?width=" + width.get  else ""}"
         println(url)
         ws.url(url)
           .withMethod("GET")

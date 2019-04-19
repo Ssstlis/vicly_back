@@ -38,11 +38,11 @@ class AttachmentController @Inject()(
   //    }).getOrElse(BadRequest)
   //  }
 
-  def uploadnew(isAvatar: Option[Int]) = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
+  def upload = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
     val user = request.user
 
     request.body.file("file").map { file =>
-      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar.isDefined)
+      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false)
         .map { response =>
           Ok(Json.toJson(response))
         }
@@ -51,10 +51,24 @@ class AttachmentController @Inject()(
     })
   }
 
-  def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async { request =>
+  def uploadAvatar = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
     val user = request.user
 
-    attachmentService.getFile(id, width).collect { case file =>
+    //TODO Remove old avatar !!!
+    request.body.file("file").map { file =>
+      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = true)
+        .map { response =>
+          Ok(Json.toJson(response))
+        }
+    }.getOrElse(Future {
+      NotFound
+    })
+  }
+
+  def download(id: String) = authUtils.authenticateAction.async { request =>
+    val user = request.user
+
+    attachmentService.getFile(id).collect { case file =>
       file.map { optStream =>
         optStream.map { stream =>
           Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
@@ -65,18 +79,32 @@ class AttachmentController @Inject()(
     })
   }
 
+  def downloadAvatar(userId: Int, width: Option[Int]) = authUtils.authenticateAction.async { request =>
+    userService.findOne(userId).map { user =>
+      attachmentService.getFileAvatar(user.avatar, width).collect { case file =>
+        file.map { optStream =>
+          optStream.map { stream =>
+            Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
+          }.getOrElse(Gone)
+        }
+      }.getOrElse(Future {
+        NotFound
+      })
+    }.getOrElse(Future {NotFound})
+  }
+
   def list = authUtils.authenticateAction { request =>
     val user = request.user
     Ok(Json.toJson(attachmentService.findByUserId(user.id)))
   }
 
-//    def remove(id: String) = authUtils.authenticateAction { request =>
-//      val user = request.user
-//      (for {
-//        groupId <- user.groupId
-//        _ <- attachmentService.remove(user.id, uuid, s"$path/$groupId/$uuid")
-//      } yield {
-//        Ok
-//      }).getOrElse(BadRequest)
-//    }
+  //    def remove(id: String) = authUtils.authenticateAction { request =>
+  //      val user = request.user
+  //      (for {
+  //        groupId <- user.groupId
+  //        _ <- attachmentService.remove(user.id, uuid, s"$path/$groupId/$uuid")
+  //      } yield {
+  //        Ok
+  //      }).getOrElse(BadRequest)
+  //    }
 }

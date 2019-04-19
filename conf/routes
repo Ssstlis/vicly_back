@@ -45,8 +45,10 @@ POST        /api/chat/archive                              controllers.ChatContr
 GET         /ws/:token                                     controllers.WsController.subscribe(token: String)
 
 #Attachments
-POST        /api/attachment/uploadnew                      controllers.AttachmentController.uploadnew(is_avatar: Option[Int])
-GET         /api/attachment/download/:id                   controllers.AttachmentController.download(id: String, width: Option[Int])
+POST        /api/attachment/upload                         controllers.AttachmentController.upload
+POST        /api/attachment/uploadAvatar                   controllers.AttachmentController.uploadAvatar
+GET         /api/attachment/download/:id                   controllers.AttachmentController.download(id: String)
+GET         /api/attachment/downloadAvatar/:user_id        controllers.AttachmentController.downloadAvatar(user_id:Int, width: Option[Int])
 GET         /api/attachment/list                           controllers.AttachmentController.list
 #GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)
 
