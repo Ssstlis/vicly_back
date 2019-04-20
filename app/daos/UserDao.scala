@@ -159,12 +159,12 @@ class UserDao @Inject()(
     )
   }
 
-  def setAvatar(userId: Int, uuid: String) = {
+  def setAvatar(userId: Int, attachment_id: ObjectId) = {
     dao.update(
       MongoDBObject("id" -> userId),
       MongoDBObject(
         "$set" -> MongoDBObject(
-          "avatar" -> uuid
+          "avatar" -> attachment_id
         )
       )
     )

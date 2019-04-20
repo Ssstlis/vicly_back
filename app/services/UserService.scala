@@ -69,9 +69,9 @@ class UserService @Inject()(
     result
   }
 
-  def setAvatar(userId: Int, uuid: String) = {
-    val result = userDao.setAvatar(userId, uuid)
-    if (result.isUpdateOfExisting) socketNotificationService.userSetAvatar(userId, uuid)
+  def setAvatar(userId: Int, attachment_id: ObjectId) = {
+    val result = userDao.setAvatar(userId, attachment_id)
+    if (result.isUpdateOfExisting) socketNotificationService.userSetAvatar(userId, attachment_id.toString)
     result
   }
 
