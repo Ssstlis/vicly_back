@@ -30,13 +30,9 @@ class AttachmentDao @Inject()(
 
   def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean) = {
     val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar))
-    if (result.isDefined) {
       result.flatMap { objectId =>
         dao.findOneById(objectId)
       }
-    } else {
-      None
-    }
   }
 
   def find(id: String) = {

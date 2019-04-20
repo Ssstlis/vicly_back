@@ -1,31 +1,31 @@
 package services
 
 import java.io.File
-import java.nio.file.Paths
 
 import akka.stream.scaladsl.{FileIO, Source}
+import akka.util.ByteString
+import cats.data._
+import cats.implicits._
 import com.google.inject.{Inject, Singleton}
 import daos.AttachmentDao
-import models.SeaweedResponse
+import models.{SeaweedResponse, User}
 import org.bson.types.ObjectId
-import play.api.{Configuration, Logger}
 import play.api.libs.ws.WSClient
 import play.api.mvc.MultipartFormData
 import play.api.mvc.MultipartFormData._
+import play.api.{Configuration, Logger}
 
-import scala.concurrent.ExecutionContext
-import scala.language.postfixOps
-import scala.sys.process._
-import scala.util.Try
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 
 @Singleton
 class AttachmentService @Inject()(
-                                   attachmentDao: AttachmentDao,
-                                   config: Configuration,
-                                   userService: UserService,
-                                   ws: WSClient
-                                 )(implicit ec: ExecutionContext) {
+  attachmentDao: AttachmentDao,
+  config: Configuration,
+  userService: UserService,
+  ws: WSClient
+)(implicit ec: ExecutionContext) {
 
   //  def postFile(wsClient: StandaloneWSClient) = {
   //    import play.api.mvc.MultipartFormData.FilePart
@@ -37,14 +37,12 @@ class AttachmentService @Inject()(
   //    wsClient.url("http://localhost:9001/uploadTransfer".post(s)
   //  }
 
-
   val seaweedfs_volume_url = config.get[String]("seaweed.address.volume")
   val seaweedfs_master_url = config.get[String]("seaweed.address.master")
 
   def saveFileNew(file: File, originalFilename: String, userId: Int, isAvatar: Boolean) = {
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
     val dataPart = DataPart("key", "value")
-
 
     ws.url(seaweedfs_volume_url + "/submit")
       .withRequestTimeout(30.seconds)
@@ -54,7 +52,7 @@ class AttachmentService @Inject()(
           attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar)
             .map { attachment =>
               // TODO old avatar file deleting
-              userService.setAvatar(userId, attachment._id.toString)
+              userService.setAvatar(userId, attachment._id)
               attachment
             }
 
@@ -66,37 +64,103 @@ class AttachmentService @Inject()(
       }
   }
 
-  def getFile(id: String) = {
-    attachmentDao.find(id)
-      .collect { case attachment =>
-        val url = seaweedfs_master_url + "/" + attachment.fid
-        ws.url(url)
-          .withMethod("GET")
-          .stream()
-          .map { response =>
-            if (response.status < 300 && response.status >= 200)
-              Some(response.bodyAsSource)
-            else
-              None
-          }
+  def saveFileAvatarNew(user: User, file: File, originalFilename: String, userId: Int) = {
+    val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
+    val dataPart = DataPart("key", "value")
+      // TODO
+    val deleteResult = user.avatar.flatMap { avatarId =>
+      attachmentDao.findOneById(avatarId)
+    }.map { attachment =>
+      ws.url(s"$seaweedfs_master_url/${attachment.fid}")
+        .delete()
+        .map { _ =>
+          attachmentDao.removeById(attachment._id)
+        }
+        .recover { case ex =>
+          Logger("application").error(ex.getLocalizedMessage, ex)
+          None
+        }
+    }
+    ws.url(seaweedfs_volume_url + "/submit")
+      .withRequestTimeout(30.seconds)
+      .post(Source(filePart :: dataPart :: Nil))
+      .map { response =>
+        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
+          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true)
+            .map { attachment =>
+              // TODO old avatar file deleting
+              userService.setAvatar(userId, attachment._id)
+              attachment
+            }
+
+        }
+      }
+      .recover { case ex =>
+        Logger("application").error(ex.getLocalizedMessage, ex)
+        None
       }
   }
 
-  def getFileAvatar(avatar_id: ObjectId, width: Option[Int]) = {
-    attachmentDao.findOneById(avatar_id)
-      .collect { case attachment =>
-        val url = seaweedfs_master_url + "/" + attachment.fid + (if (width.isDefined) "?width=" + width.get else "")
-        println(url)
+  //    ws.url(seaweedfs_volume_url + "/submit")
+  //      .withRequestTimeout(30.seconds)
+  //      .post(Source(filePart :: dataPart :: Nil))
+  //      .map { response =>
+  //        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
+  //          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, true)
+  //            .map { attachment =>
+  //              // TODO old avatar file deleting
+  //              userService.setAvatar(userId, attachment._id.toString)
+  //              attachment
+  //            }
+  //
+  //        }
+  //      }
+  //      .recover { case ex =>
+  //        Logger("application").error(ex.getLocalizedMessage, ex)
+  //        None
+  //      }
+
+  def getFile(id: String) = {
+    attachmentDao.find(id)
+      .collect {
+        case attachment =>
+          val url = seaweedfs_master_url + "/" + attachment.fid
+          ws.url(url)
+            .withMethod("GET")
+            .stream()
+            .map {
+              response =>
+                if (response.status < 300 && response.status >= 200)
+                  Some(response.bodyAsSource)
+                else
+                  None
+            }
+      }
+  }
+
+  def getFileAvatar(avatarId: ObjectId, width: Option[Int]) = {
+    attachmentDao.findOneById(avatarId).map {
+      attachment =>
+        val url = s"$seaweedfs_master_url/${
+          attachment.fid
+        }${
+          width.fold("")(w => s"?width=$w")
+        }"
+        //        println(url)
         ws.url(url)
           .withMethod("GET")
           .stream()
-          .map { response =>
-            if (response.status < 300 && response.status >= 200)
-              Some(response.bodyAsSource)
-            else
-              None
-          }
-      }
+          .collect {
+            case response if response.status < 300 && response.status >= 200 =>
+              response.bodyAsSource
+          }.map(Some(_)).recover {
+          case _ => None
+        }
+    }.fold {
+      EitherT.leftT[Future, Source[ByteString, _]]("Can't find avatar in DB")
+    } {
+      EitherT.fromOptionF(_, "No pic in seaweed")
+    }
   }
 
   def findByUserId(userId: Int) = {

@@ -75,7 +75,8 @@ class InviteController @Inject()(
         login,
         active = false,
         DateTime.now.timestamp,
-        id)
+        id,
+        avatar = None)
       if (userService.save(user).wasAcknowledged() && inviteService.remove(invite).wasAcknowledged()) {
         Ok
       } else {

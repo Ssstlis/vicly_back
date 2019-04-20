@@ -10,14 +10,16 @@ import services.{AttachmentService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
+import cats.implicits._
+import cats.data._
 
 @Singleton
 class AttachmentController @Inject()(
-                                      attachmentService: AttachmentService,
-                                      authUtils: AuthUtils,
-                                      config: Configuration,
-                                      userService: UserService
-                                    )(implicit ec: ExecutionContext) extends InjectedController {
+  attachmentService: AttachmentService,
+  authUtils: AuthUtils,
+  config: Configuration,
+  userService: UserService
+)(implicit ec: ExecutionContext) extends InjectedController {
 
   val path = config.get[String]("path.upload")
 
@@ -56,7 +58,7 @@ class AttachmentController @Inject()(
 
     //TODO Remove old avatar !!!
     request.body.file("file").map { file =>
-      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = true)
+      attachmentService.saveFileAvatarNew(user, file.ref.toFile, file.filename, user.id)
         .map { response =>
           Ok(Json.toJson(response))
         }
@@ -80,19 +82,13 @@ class AttachmentController @Inject()(
   }
 
   def downloadAvatar(userId: Int, width: Option[Int]) = authUtils.authenticateAction.async { request =>
-    userService.findOne(userId).map { user =>
-      user.avatar.map { avatar =>
-        attachmentService.getFileAvatar(avatar, width).collect { case file =>
-          file.map { optStream =>
-            optStream.map { stream =>
-              Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
-            }.getOrElse(Gone)
-          }
-        }.getOrElse(Future.successful(NotFound))
-      }.getOrElse(Future.successful(NotFound))
-    }.getOrElse(Future {
-      NotFound
-    })
+    (for {
+      user <- EitherT.fromOption[Future](userService.findOne(userId), "Can't find user")
+      avatar <- EitherT.fromOption[Future](user.avatar, "No avatar specified for user")
+      stream <- attachmentService.getFileAvatar(avatar, width)
+    } yield {
+      Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
+    }).valueOr(err => BadRequest(Json.obj("error" -> err)))
   }
 
   def list = authUtils.authenticateAction { request =>
