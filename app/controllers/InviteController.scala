@@ -20,7 +20,7 @@ class InviteController @Inject()(
                                   userService: UserService
                                 ) extends InjectedController {
 
-  def create() = authUtils.authenticateAction(parse.json) { request =>
+  def create = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
 
@@ -28,13 +28,12 @@ class InviteController @Inject()(
       groupId <- (json \ "group_id").asOpt[Int]
       firstName <- (json \ "first_name").asOpt[String]
       lastName <- (json \ "last_name").asOpt[String]
-      surname <- (json \ "surname").asOpt[String]
-      position <- (json \ "position").asOpt[String]
     } yield {
       val uuid = randomUUID().toString
-
+      val position = (json \ "position").asOpt[String]
+      val surname = (json \ "surname").asOpt[String]
       groupService.findById(groupId).collect { case group =>
-        val invite = Invite(firstName, Some(surname), lastName, Some(position), uuid, group.id, user.id)
+        val invite = Invite(firstName, surname, lastName, position, uuid, group.id, user.id)
         if (inviteService.create(invite).wasAcknowledged()) {
           Ok(Json.obj("invite_id" -> uuid))
         } else {
