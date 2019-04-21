@@ -4,8 +4,6 @@ import java.io.File
 
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
-import cats.data._
-import cats.implicits._
 import com.google.inject.{Inject, Singleton}
 import daos.AttachmentDao
 import models.{SeaweedResponse, User}
@@ -18,6 +16,10 @@ import play.api.{Configuration, Logger}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
+import cats.implicits._
+import cats.data._
+
+import scala.util.{Failure, Success}
 
 @Singleton
 class AttachmentService @Inject()(
@@ -67,38 +69,46 @@ class AttachmentService @Inject()(
   def saveFileAvatarNew(user: User, file: File, originalFilename: String, userId: Int) = {
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
     val dataPart = DataPart("key", "value")
-      // TODO
+    // TODO
     val deleteResult = user.avatar.flatMap { avatarId =>
       attachmentDao.findOneById(avatarId)
     }.map { attachment =>
       ws.url(s"$seaweedfs_master_url/${attachment.fid}")
         .delete()
         .map { _ =>
-          attachmentDao.removeById(attachment._id)
+          if (attachmentDao.removeById(attachment._id).wasAcknowledged())
+            Right("Was deleted!")
+          else
+            Left(new Exception("Error while deleting from BD"))
         }
         .recover { case ex =>
           Logger("application").error(ex.getLocalizedMessage, ex)
-          None
+          Left(ex)
         }
-    }
-    ws.url(seaweedfs_volume_url + "/submit")
-      .withRequestTimeout(30.seconds)
-      .post(Source(filePart :: dataPart :: Nil))
-      .map { response =>
-        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true)
-            .map { attachment =>
-              // TODO old avatar file deleting
-              userService.setAvatar(userId, attachment._id)
+    }.getOrElse(Future.successful(Right("Not needed deleting!")))
+
+    deleteResult.flatMap {
+      case Left(ex) => Future.successful(Left(ex))
+      case Right(_) =>
+        ws.url(seaweedfs_volume_url + "/submit")
+          .withRequestTimeout(30.seconds)
+          .post(Source(filePart :: dataPart :: Nil))
+          .map { response =>
+            for {
+              seaweedResponse <- response.json.asOpt(SeaweedResponse.reads()).toRight(new Exception("Seaweedfs saving error"))
+              attachment <- attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true)
+                .toRight(new Exception("BD fid saving error,but seaweedfs saved successfully"))
+            } yield {
+              userService.setAvatar(userId, attachment._id).wasAcknowledged()
               attachment
             }
+          }
+          .recover { case ex =>
+            Logger("application").error(ex.getLocalizedMessage, ex)
+            Left(ex)
+          }
+    }
 
-        }
-      }
-      .recover { case ex =>
-        Logger("application").error(ex.getLocalizedMessage, ex)
-        None
-      }
   }
 
   //    ws.url(seaweedfs_volume_url + "/submit")
