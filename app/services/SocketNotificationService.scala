@@ -15,7 +15,7 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
                     groupId: Int,
                     json: JsValue,
                     filter: Int => Boolean = (_: Int) => true,
-                    subs: Int => List[(ActorRef, Int)] = (groupId: Int) => subscriberService.subscriptionSubscribers(groupId)
+                    subs: Int => List[(ActorRef, Int)] = (groupId: Int) => subscriberService.allSubscribers
                   ) = {
     subs(groupId).collect { case (subscriber, userId) if filter(userId) =>
       subscriber ! Json.obj(
@@ -59,15 +59,15 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   }
 
   def online(groupIdO: Option[Int], userId: Int) = {
-    push(11, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
+    push(11, 0, Json.obj("id" -> userId))
   }
 
   def offline(groupIdO: Option[Int], userId: Int) = {
-    push(12, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
+    push(12, 0, Json.obj("id" -> userId))
   }
 
   def archive(groupIdO: Option[Int], userId: Int) = {
-    push(13, groupIdO.getOrElse(-1), Json.obj("id" -> userId))
+    push(13, 0, Json.obj("id" -> userId))
   }
 
   def typing(groupId: Int, userId: Int, chat: Chat) = {
