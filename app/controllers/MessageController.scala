@@ -11,66 +11,11 @@ import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class MessageController @Inject()(
-                                   authUtils: AuthUtils,
-                                   chatService: ChatService,
-                                   messageService: MessageService,
-                                   userService: UserService
-                                 ) extends InjectedController {
-
-  def post = authUtils.authenticateAction(parse.json) { request =>
-    val user = request.user
-    val json = request.body
-
-    (for {
-      groupId <- user.groupId
-      message <- json.asOpt(Message.reads(user.id))
-      chatType@("user" | "group") <- (json \ "type").asOpt[String]
-    } yield {
-      val targetUserId = message.chatId
-      val replyForO = (json \ "reply_for").asOpt[ObjectId]
-      chatType match {
-        case "user" => {
-          if (userService.findByIdNonArchive(targetUserId).isDefined) {
-            chatService.findUserChat(user.id, targetUserId).map { chat =>
-              if (
-                userService.findOne(targetUserId).isDefined && {
-                  val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-                  messageService.save(filledMessage)(chat).wasAcknowledged()
-                }
-              ) {
-                Ok
-              } else {
-                ResetContent
-              }
-            }.getOrElse {
-              if (
-                userService.findOne(targetUserId).isDefined &&
-                  chatService.createUserChat(user.id, targetUserId, groupId)
-              ) {
-                chatService.findUserChat(user.id, targetUserId).collect { case chat
-                  if {
-                    val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-                    messageService.save(filledMessage)(chat).wasAcknowledged()
-                  } => Ok
-                }.getOrElse(BadRequest)
-              } else {
-                BadRequest
-              }
-            }
-          } else {
-            BadRequest
-          }
-        }
-        case "group" =>
-          chatService.findGroupChat(targetUserId, groupId).collect { case chat
-            if {
-              val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-              messageService.save(filledMessage)(chat).wasAcknowledged()
-            } => Ok
-          }.getOrElse(BadRequest)
-      }
-    }).getOrElse(BadRequest)
-  }
+  authUtils: AuthUtils,
+  chatService: ChatService,
+  messageService: MessageService,
+  userService: UserService
+) extends InjectedController {
 
   def postnewchat = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
@@ -115,7 +60,7 @@ class MessageController @Inject()(
         }.getOrElse {
           if (
             userService.findOne(targetUserId).isDefined &&
-              chatService.createUserChat(user.id, targetUserId, groupId)
+            chatService.createUserChat(user.id, targetUserId, groupId)
           ) {
             chatService.findUserChat(user.id, targetUserId).collect { case chat
               if {

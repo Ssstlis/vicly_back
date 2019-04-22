@@ -11,12 +11,12 @@ import utils.JsonHelper.ObjectIdFormat
 class SocketNotificationService @Inject()(subscriberService: SubscriberService) {
 
   private def push(
-                    event: Int,
-                    groupId: Int,
-                    json: JsValue,
-                    filter: Int => Boolean = (_: Int) => true,
-                    subs: Int => List[(ActorRef, Int)] = (groupId: Int) => subscriberService.allSubscribers
-                  ) = {
+    event: Int,
+    groupId: Int,
+    json: JsValue,
+    filter: Int => Boolean = (_: Int) => true,
+    subs: Int => List[(ActorRef, Int)] = (groupId: Int) => subscriberService.allSubscribers
+  ) = {
     subs(groupId).collect { case (subscriber, userId) if filter(userId) =>
       subscriber ! Json.obj(
         "event" -> event,
@@ -26,7 +26,7 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   }
 
   def markRead(id: ObjectId, chat: Chat) = {
-    push(5, 0,  Json.obj("message_id" -> id, "chat" -> chat), chat.userIds.contains,
+    push(5, 0, Json.obj("message_id" -> id, "chat" -> chat), chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 
@@ -84,13 +84,20 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
       (_: Int) => subscriberService.allSubscribers)
   }
 
-  def newUserInChat(groupId: Int, chat: Chat, userId: Int) = {
+  def newUserInChat(chat: Chat, userId: Int) = {
     val json = Json.obj(
       "chat_id" -> chat.id,
       "user_id" -> userId
     )
-    push(22, groupId, json, chat.userIds.contains,
+    push(22, 0, json, chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
+  }
+
+  def newChatForUser(chat: Chat, userId: Int) = {
+    val json = Json.obj(
+      "chat" -> chat,
+    )
+    push(25, 0, json, id => id==userId)
   }
 
   def removeUserInChat(groupId: Int, chat: Chat, userId: Int) = {

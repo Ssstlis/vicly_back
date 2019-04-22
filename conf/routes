@@ -21,7 +21,7 @@ GET         /api/group/list                                 controllers.GroupCon
 POST        /api/group/set_purpose                          controllers.GroupController.setPurpose
 
 #Messages
-POST        /api/message/post                               controllers.MessageController.post
+#POST        /api/message/post                               controllers.MessageController.post
 POST        /api/message/postnewchat                        controllers.MessageController.postnewchat
 POST        /api/message/postnewuser                        controllers.MessageController.postnewuser
 GET         /api/message/chat/unread/:id/:chat_type         controllers.MessageController.unread(id: Int, chat_type: String)
