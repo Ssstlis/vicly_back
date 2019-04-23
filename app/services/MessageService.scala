@@ -8,9 +8,9 @@ import utils.Helper.StringExtended
 
 @Singleton
 class MessageService @Inject()(
-                                messageDao: MessageDao,
-                                socketNotificationService: SocketNotificationService
-                              )(implicit configService: ConfigService) {
+  messageDao: MessageDao,
+  socketNotificationService: SocketNotificationService
+)(implicit configService: ConfigService) {
 
   implicit class MessageExtended(m: Message) {
     def encode = m.copy(text = m.text.encodeToken)
@@ -80,4 +80,6 @@ class MessageService @Inject()(
   }
 
   def findChatIdByObjectId(id: ObjectId) = messageDao.findChatIdByObjectId(id)
+
+  def findMessagesAfter(chatId: Int, messageId: ObjectId) = messageDao.findMessagesAfter(chatId, messageId)
 }

@@ -77,6 +77,16 @@ class MessageDao @Inject()(
       .headOption
   }
 
+  def findMessagesAfter(chatId: Int, messageId: ObjectId) = {
+    dao.find(
+      MongoDBObject(
+        "chat_id" -> chatId,
+        "id" -> MongoDBObject("$gt" -> messageId)
+      ))
+      .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
+      .toList
+  }
+
   def change(oid: ObjectId, userId: Int, key: String, text: String) = {
     dao.update(
       MongoDBObject(
@@ -122,4 +132,5 @@ class MessageDao @Inject()(
       )
     )
   }
+
 }

@@ -93,6 +93,7 @@ class MessageController @Inject()(
     Ok(Json.toJson(messages))
   }
 
+  // TO DELETE FIXME
   def unread(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
     val user = request.user
     val messages = (chatType match {
@@ -103,6 +104,19 @@ class MessageController @Inject()(
       messageService.findUnreadMessages(chat.id, user.id)
     }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
     Ok(Json.toJson(messages))
+  }
+
+  def userChatMessagesFrom(userId: Int, messageId: String) = authUtils.authenticateAction { request =>
+    val user = request.user
+    chatService.findUserChat(user.id, userId).map { chat =>
+      Ok(Json.toJson(messageService.findMessagesAfter(chat.id, new ObjectId(messageId))))
+    }.getOrElse(BadRequest(Json.obj("error" -> s"Can't find chat with user $userId")))
+  }
+
+  def groupChatMessagesFrom(chatId: Int, messageId: String) = authUtils.authenticateAction { request =>
+    chatService.findGroupChat(chatId).map { chat =>
+      Ok(Json.toJson(messageService.findMessagesAfter(chat.id, new ObjectId(messageId))))
+    }.getOrElse(BadRequest(Json.obj("error" -> s"Can't find group chat with id $chatId")))
   }
 
   def readnew = authUtils.authenticateAction(parse.json) { request =>
