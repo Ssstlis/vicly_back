@@ -114,23 +114,33 @@ class MessageDao @Inject()(
   }
 
   def markRead(oid: ObjectId) = {
-    findById(oid).map(message =>
-      dao.update(
+    findById(oid).flatMap { message =>
+      val messageCopy = message.copy(timestampRead = Some(MessageTime()), timestampDelivery = Some(MessageTime()))
+      val result = dao.update(
         MongoDBObject("_id" -> oid),
-        message.copy(timestampRead = Some(MessageTime()), timestampDelivery = Some(MessageTime())),
-        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
-      )
-    )
+        messageCopy,
+        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED)
+      if (result.isUpdateOfExisting) {
+        Some(messageCopy)
+      } else {
+        None
+      }
+    }
   }
 
   def markDelivery(oid: ObjectId) = {
-    findById(oid).map(message =>
-      dao.update(
+    findById(oid).flatMap { message =>
+      val messageCopy = message.copy(timestampDelivery = Some(MessageTime()))
+      val result = dao.update(
         MongoDBObject("_id" -> oid),
         message.copy(timestampDelivery = Some(MessageTime())),
-        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
-      )
-    )
+        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED)
+      if (result.isUpdateOfExisting) {
+        Some(messageCopy)
+      } else {
+        None
+      }
+    }
   }
 
 }

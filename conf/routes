@@ -1,60 +1,61 @@
 #User
-POST        /api/user/login                                     controllers.UserController.login
-GET         /api/user/logout                                    controllers.UserController.logout
-POST        /api/user/signup                                    controllers.UserController.signup
-GET         /api/user/list                                      controllers.UserController.list
-POST        /api/user/update_password                           controllers.UserController.updatePassword
-GET         /api/user/archive                                   controllers.UserController.archive(userId: Option[Int])
-GET         /api/user/set_status/:status                        controllers.UserController.setStatus(status: String)
-GET         /api/user/clear_status                              controllers.UserController.removeStatus
-GET         /api/user/remove_avatar                             controllers.UserController.removeAvatar
+POST        /api/user/login                                          controllers.UserController.login
+GET         /api/user/logout                                         controllers.UserController.logout
+POST        /api/user/signup                                         controllers.UserController.signup
+GET         /api/user/list                                           controllers.UserController.list
+POST        /api/user/update_password                                controllers.UserController.updatePassword
+GET         /api/user/archive                                        controllers.UserController.archive(userId: Option[Int])
+GET         /api/user/set_status/:status                             controllers.UserController.setStatus(status: String)
+GET         /api/user/clear_status                                   controllers.UserController.removeStatus
+GET         /api/user/remove_avatar                                  controllers.UserController.removeAvatar
 
 #Invite
-POST        /api/invite                                         controllers.InviteController.create()
-GET         /api/invite/list                                    controllers.InviteController.list
-GET         /api/invite/:uuid                                   controllers.InviteController.one(uuid: String)
-POST        /api/invite/signup                                  controllers.InviteController.signup
+POST        /api/invite                                              controllers.InviteController.create()
+GET         /api/invite/list                                         controllers.InviteController.list
+GET         /api/invite/:uuid                                        controllers.InviteController.one(uuid: String)
+POST        /api/invite/signup                                       controllers.InviteController.signup
 
 #Group
-POST        /api/group/create                                   controllers.GroupController.create
-GET         /api/group/list                                     controllers.GroupController.list
-POST        /api/group/set_purpose                              controllers.GroupController.setPurpose
+POST        /api/group/create                                        controllers.GroupController.create
+GET         /api/group/list                                          controllers.GroupController.list
+POST        /api/group/set_purpose                                   controllers.GroupController.setPurpose
 
 #Messages
-POST        /api/message/postnewchat                            controllers.MessageController.postnewchat
-POST        /api/message/postnewuser                            controllers.MessageController.postnewuser
+POST        /api/message/postnewchat                                 controllers.MessageController.postnewchat
+POST        /api/message/postnewuser                                 controllers.MessageController.postnewuser
 #GET         /api/message/chat/group/unread/:id                  controllers.MessageController.unread(id: Int)
-GET         /api/message/chat/user/:user_id/:message_id         controllers.MessageController.userChatMessagesFrom(user_id: Int, message_id:String)
-GET         /api/message/chat/group/:chat_id/:message_id        controllers.MessageController.groupChatMessagesFrom(chat_id: Int, message_id:String)
-GET         /api/message/chat/group/:chat_id/:page              controllers.MessageController.groupChatMessages(chat_id: Int, page: Int)
-GET         /api/message/chat/user/:user_id/:page               controllers.MessageController.userChatMessages(user_id: Int, page: Int)
-POST        /api/message/readnew                                controllers.MessageController.readnew
-POST        /api/message/deliverynew                            controllers.MessageController.deliverynew
-POST        /api/message/delete                                 controllers.MessageController.delete
-POST        /api/message/change                                 controllers.MessageController.change
+GET         /api/message/chat/user/from/:user_id/:message_id         controllers.MessageController.userChatMessagesFrom(user_id: Int, message_id:String)
+GET         /api/message/chat/group/from/:chat_id/:message_id        controllers.MessageController.groupChatMessagesFrom(chat_id: Int, message_id:String)
+GET         /api/message/chat/group/:chat_id/:page                   controllers.MessageController.groupChatMessages(chat_id: Int, page: Int)
+GET         /api/message/chat/user/:user_id/:page                    controllers.MessageController.userChatMessages(user_id: Int, page: Int)
+POST        /api/message/readnew                                     controllers.MessageController.readnew
+POST        /api/message/deliverynew                                 controllers.MessageController.deliverynew
+POST        /api/message/delete                                      controllers.MessageController.delete
+POST        /api/message/change                                      controllers.MessageController.change
 
 #Chat
-POST        /api/chat/create                                    controllers.ChatController.create
-POST        /api/chat/typing                                    controllers.ChatController.typing
-POST        /api/chat/add                                       controllers.ChatController.add
-POST        /api/chat/remove                                    controllers.ChatController.remove
-POST        /api/chat/archive                                   controllers.ChatController.archive
+POST        /api/chat/create                                         controllers.ChatController.create
+POST        /api/chat/typing                                         controllers.ChatController.typing
+POST        /api/chat/add                                            controllers.ChatController.add
+POST        /api/chat/remove                                         controllers.ChatController.remove
+POST        /api/chat/archive                                        controllers.ChatController.archive
 
 #WebSocket
-GET         /ws/:token                                          controllers.WsController.subscribe(token: String)
+GET         /ws/:token                                               controllers.WsController.subscribe(token: String)
 
 #Attachments
-POST        /api/attachment/upload                              controllers.AttachmentController.upload
-POST        /api/attachment/upload_avatar                       controllers.AttachmentController.uploadAvatar
-GET         /api/attachment/download/:id                        controllers.AttachmentController.download(id: String)
-GET         /api/attachment/download_avatar/:user_id            controllers.AttachmentController.downloadAvatar(user_id:Int, width: Option[Int])
-GET         /api/attachment/list                                controllers.AttachmentController.list
+POST        /api/attachment/upload                                   controllers.AttachmentController.upload
+POST        /api/attachment/upload_avatar                            controllers.AttachmentController.uploadAvatar
+GET         /api/attachment/download/:id                             controllers.AttachmentController.download(id: String)
+GET         /api/attachment/download_avatar/:user_id                 controllers.AttachmentController.downloadAvatar(user_id:Int, width: Option[Int])
+GET         /api/attachment/user/list                                controllers.AttachmentController.list
+POST        /api/attachment/list                                     controllers.AttachmentController.list
 #GET         /api/attachment/remove/:uuid                   controllers.AttachmentController.remove(uuid: String)
 
 #Role
-GET         /api/role/create/:description                       controllers.RoleController.create(description: String)
-GET         /api/role/update/:id/:description                   controllers.RoleController.update(description: String, id: Int)
-GET         /api/role/remove/:id                                controllers.RoleController.remove(id: Int)
-GET         /api/role/list                                      controllers.RoleController.list
-GET         /api/role/one/:id                                   controllers.RoleController.one(id: Int)
-GET         /api/role/one/:id/no_auth                           controllers.RoleController.oneNoAuth(id: Int)
+GET         /api/role/create/:description                            controllers.RoleController.create(description: String)
+GET         /api/role/update/:id/:description                        controllers.RoleController.update(description: String, id: Int)
+GET         /api/role/remove/:id                                     controllers.RoleController.remove(id: Int)
+GET         /api/role/list                                           controllers.RoleController.list
+GET         /api/role/one/:id                                        controllers.RoleController.one(id: Int)
+GET         /api/role/one/:id/no_auth                                controllers.RoleController.oneNoAuth(id: Int)

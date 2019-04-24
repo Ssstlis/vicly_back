@@ -45,7 +45,7 @@ class MessageController @Inject()(
     } yield {
       val replyForO = (json \ "reply_for").asOpt[ObjectId]
       val targetUserId = message.chatId
-      if (userService.findByIdNonArchive(targetUserId).isDefined) {
+      if (targetUserId != 0 && userService.findByIdNonArchive(targetUserId).isDefined) {
         chatService.findUserChat(user.id, targetUserId).map { chat =>
           if (
             userService.findOne(targetUserId).isDefined && {
@@ -124,7 +124,6 @@ class MessageController @Inject()(
     val user = request.user
 
     (for {
-      groupId <- user.groupId
       id <- (json \ "message_id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
@@ -134,8 +133,7 @@ class MessageController @Inject()(
     } yield {
       if (message.from != user.id && chat.userIds.contains(user.id)) {
         messageService.read(oid)(chat).collect {
-          case result
-            if result.isUpdateOfExisting => Ok
+          case _ => Ok
         }.getOrElse(BadRequest)
       } else {
         Forbidden
@@ -148,7 +146,6 @@ class MessageController @Inject()(
     val user = request.user
 
     (for {
-      groupId <- user.groupId
       id <- (json \ "message_id").asOpt[String] if ObjectId.isValid(id)
       oid = new ObjectId(id)
       chat <- messageService.findChatIdByObjectId(oid).flatMap { chatId =>
@@ -158,8 +155,7 @@ class MessageController @Inject()(
     } yield {
       if (message.from != user.id && chat.userIds.contains(user.id)) {
         messageService.delivery(oid)(chat).collect {
-          case result
-            if result.isUpdateOfExisting => Ok
+          case _=> Ok
         }.getOrElse(BadRequest)
       } else {
         Forbidden
