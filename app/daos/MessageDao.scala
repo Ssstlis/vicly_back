@@ -36,8 +36,8 @@ class MessageDao @Inject()(
       "chat_id" -> chatId
     ))
       .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
-      .skip(page * 100)
-      .limit(100)
+      .skip(page * 20)
+      .limit(20)
       .toList
   }
 
