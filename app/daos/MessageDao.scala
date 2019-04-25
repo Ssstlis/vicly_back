@@ -77,6 +77,16 @@ class MessageDao @Inject()(
       .headOption
   }
 
+  def findMessagesAfter(chatId: Int, messageId: ObjectId) = {
+    dao.find(
+      MongoDBObject(
+        "chat_id" -> chatId,
+        "id" -> MongoDBObject("$gt" -> messageId)
+      ))
+      .sort(MongoDBObject("timestamp_post.timestamp" -> -1))
+      .toList
+  }
+
   def change(oid: ObjectId, userId: Int, key: String, text: String) = {
     dao.update(
       MongoDBObject(
@@ -104,22 +114,33 @@ class MessageDao @Inject()(
   }
 
   def markRead(oid: ObjectId) = {
-    findById(oid).map(message =>
-      dao.update(
+    findById(oid).flatMap { message =>
+      val messageCopy = message.copy(timestampRead = Some(MessageTime()), timestampDelivery = Some(MessageTime()))
+      val result = dao.update(
         MongoDBObject("_id" -> oid),
-        message.copy(timestampRead = Some(MessageTime()), timestampDelivery = Some(MessageTime())),
-        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
-      )
-    )
+        messageCopy,
+        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED)
+      if (result.isUpdateOfExisting) {
+        Some(messageCopy)
+      } else {
+        None
+      }
+    }
   }
 
   def markDelivery(oid: ObjectId) = {
-    findById(oid).map(message =>
-      dao.update(
+    findById(oid).flatMap { message =>
+      val messageCopy = message.copy(timestampDelivery = Some(MessageTime()))
+      val result = dao.update(
         MongoDBObject("_id" -> oid),
         message.copy(timestampDelivery = Some(MessageTime())),
-        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED
-      )
-    )
+        upsert = false, multi = false, WriteConcern.ACKNOWLEDGED)
+      if (result.isUpdateOfExisting) {
+        Some(messageCopy)
+      } else {
+        None
+      }
+    }
   }
+
 }

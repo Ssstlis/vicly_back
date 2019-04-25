@@ -28,7 +28,7 @@ class ChatService @Inject()(chatDao: ChatDao) {
     chatDao.createGroupChat(userIds, groupId, ownerId, name, purpose)
   }
 
-  def findGroupChat(id: Int, groupId: Int) = chatDao.findGroupChat(id, groupId)
+  def findGroupChat(id: Int) = chatDao.findGroupChat(id)
 
   def findGroupChatWithUser(userId: Int, chatId: Int) = chatDao.findGroupChatWithUser(userId, chatId)
 

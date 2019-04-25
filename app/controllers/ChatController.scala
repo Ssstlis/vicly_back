@@ -7,11 +7,11 @@ import services.{ChatService, SocketNotificationService, UserService}
 
 @Singleton
 class ChatController @Inject()(
-                                authUtils: AuthUtils,
-                                chatService: ChatService,
-                                socketNotificationService: SocketNotificationService,
-                                userService: UserService
-                              ) extends InjectedController {
+  authUtils: AuthUtils,
+  chatService: ChatService,
+  socketNotificationService: SocketNotificationService,
+  userService: UserService
+) extends InjectedController {
 
   /**
     * @api {POST} /api/chat/create  Create new chat
@@ -48,7 +48,7 @@ class ChatController @Inject()(
 
   /**
     * @api {POST} /api/chat/add  Add new user in chat
-    * @apiName  Add new user in chat
+    * @apiName Add new user in chat
     * @apiGroup Chats
     * @apiParam {Array[Int]}    user_ids Chat members user ids.
     * @apiParam {String}        name     Title of chat.
@@ -66,15 +66,14 @@ class ChatController @Inject()(
     val user = request.user
 
     (for {
-      groupId <- user.groupId
       chatId <- (json \ "chat_id").asOpt[Int]
-      _@"group" <- (json \ "chat_type").asOpt[String]
       userId <- (json \ "user_id").asOpt[Int]
-      userAdd <- userService.findOne(userId) if userAdd.groupId.contains(groupId)
-      chat <- chatService.findGroupChat(chatId, groupId) if !chat.userIds.contains(userId)
+      chat <- chatService.findGroupChat(chatId) if !chat.userIds.contains(userId) && chat.chatType == "group"
+      userAdd <- userService.findOne(userId) //if userAdd.groupId.contains(groupId)
       userIds = userId :: chat.userIds if chatService.updateUsers(chatId, userIds).isUpdateOfExisting
     } yield {
-      socketNotificationService.newUserInChat(groupId, chat, userId)
+      socketNotificationService.newChatForUser(chat.copy(userIds = userIds), userId)
+      socketNotificationService.newUserInChat(chat, userId)
       Ok
     }).getOrElse(BadRequest)
   }
@@ -89,7 +88,7 @@ class ChatController @Inject()(
       _@"group" <- (json \ "chat_type").asOpt[String]
       userId <- (json \ "user_id").asOpt[Int]
       userAdd <- userService.findOne(userId) if userAdd.groupId.contains(groupId)
-      chat <- chatService.findGroupChat(chatId, groupId) if chat.userIds.contains(userId)
+      chat <- chatService.findGroupChat(chatId) if chat.userIds.contains(userId)
       userIds = chat.userIds.filterNot(_ == userId)
       if chatService.updateUsers(chatId, userIds).isUpdateOfExisting
     } yield {
@@ -105,7 +104,7 @@ class ChatController @Inject()(
     (for {
       groupId <- user.groupId
       chatId <- (json \ "chat_id").asOpt[Int]
-      chat <- chatService.findGroupChat(chatId, groupId) if chat.owner.contains(user._id)
+      chat <- chatService.findGroupChat(chatId) if chat.owner.contains(user._id)
       if chatService.archive(chatId).isUpdateOfExisting
     } yield {
       socketNotificationService.archiveChat(groupId, chat)

@@ -1,5 +1,7 @@
 package controllers
 
+import java.io.{File, FileInputStream}
+
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
 import play.api.Configuration
@@ -12,6 +14,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 import cats.implicits._
 import cats.data._
+import org.apache.tika.metadata._
+import org.bson.types.ObjectId
+import org.xml.sax.SAXException
 
 @Singleton
 class AttachmentController @Inject()(
@@ -40,11 +45,39 @@ class AttachmentController @Inject()(
   //    }).getOrElse(BadRequest)
   //  }
 
+  import org.apache.tika.exception.TikaException
+  import org.apache.tika.parser.AutoDetectParser
+  import org.apache.tika.sax.BodyContentHandler
+  import java.io.IOException
+  import java.io.InputStream
+
+  @throws[IOException]
+  @throws[SAXException]
+  @throws[TikaException]
+  def parseExample(file: File): Map[String, String] = {
+    val parser = new AutoDetectParser
+    val handler = new BodyContentHandler
+    val metadata = new Metadata
+    try {
+      val stream = new FileInputStream(file)
+      try {
+        parser.parse(stream, handler, metadata)
+        (for (key <- metadata.names()) yield (key, metadata.get(key))).toMap
+      } finally if (stream != null) stream.close()
+    } catch {
+      case err: Throwable => {
+        println(err.toString)
+        Map("fulfilled" -> "error")
+      }
+    }
+  }
+
   def upload = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
     val user = request.user
 
     request.body.file("file").map { file =>
-      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false)
+      val metadata = parseExample(file.ref.toFile)
+      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false, metadata)
         .map { response =>
           Ok(Json.toJson(response))
         }
@@ -94,6 +127,20 @@ class AttachmentController @Inject()(
     val user = request.user
     Ok(Json.toJson(attachmentService.findByUserId(user.id)))
   }
+
+  // TODO
+  //  def listById = authUtils.authenticateAction { request =>
+  //    val user = request.user
+  //    val json = request.body
+  //
+  //    for (
+  //    attachments <- (json \ "attachments").asOpt[List[ObjectId]]
+  //      atta
+  //    <- attachmentService
+  //    .
+  //    )
+  //    Ok(Json.toJson(attachmentService.findByUserId(user.id)))
+  //  }
 
   //    def remove(id: String) = authUtils.authenticateAction { request =>
   //      val user = request.user

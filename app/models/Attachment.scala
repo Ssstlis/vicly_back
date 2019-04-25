@@ -11,9 +11,9 @@ case class Attachment(
   @Key("user_id") userId: Int,
   filename: String,
   size: Long,
-  @Key("is_avatar")isAvatar: Boolean,
-  timestamp: Int = (System.currentTimeMillis() / 1000).toInt,
-
+  @Key("is_avatar") isAvatar: Boolean,
+  metadata: Map[String, String] = Map("fulfilled" -> "false"),
+  timestamp: Int = (System.currentTimeMillis() / 1000).toInt
 )
 
 trait AttachmentJson {
@@ -24,7 +24,8 @@ trait AttachmentJson {
       "filename" -> a.filename,
       "size" -> a.size,
       "timestamp" -> a.timestamp,
-      "is_avatar" -> a.isAvatar
+      "is_avatar" -> a.isAvatar,
+      "metadata" -> a.metadata
     )
   }
 }
