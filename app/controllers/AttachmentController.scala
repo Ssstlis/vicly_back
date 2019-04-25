@@ -54,28 +54,21 @@ class AttachmentController @Inject()(
   @throws[IOException]
   @throws[SAXException]
   @throws[TikaException]
-  def parseExample(file: File): Unit = {
+  def parseExample(file: File): Map[String, String] = {
     val parser = new AutoDetectParser
     val handler = new BodyContentHandler
     val metadata = new Metadata
     try {
       val stream = new FileInputStream(file)
       try {
-        val t0 = System.nanoTime()
-        val t001 = System.currentTimeMillis()
         parser.parse(stream, handler, metadata)
-        val t1 = System.nanoTime()
-        val t011 = System.currentTimeMillis()
-        println("Elapsed time: " + (t1 - t0)/1000000.0 + "ms(ns)")
-        println("/////////////////////////////////////////////////////////////////////////////////////////////////////")
-        println("Content-type:"+metadata.get(HttpHeaders.CONTENT_TYPE))
-        println("Content-type:"+metadata.get(HttpHeaders.CONTENT_TYPE))
-        println(metadata.toString)
-        println("/////////////////////////////////////////////////////////////////////////////////////////////////////")
-        handler.toString
+        (for (key <- metadata.names()) yield (key, metadata.get(key))).toMap
       } finally if (stream != null) stream.close()
     } catch {
-      case err: Throwable => println(err.toString)
+      case err: Throwable => {
+        println(err.toString)
+        Map("fulfilled" -> "error")
+      }
     }
   }
 
@@ -83,8 +76,8 @@ class AttachmentController @Inject()(
     val user = request.user
 
     request.body.file("file").map { file =>
-      parseExample(file.ref.toFile)
-      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false)
+      val metadata = parseExample(file.ref.toFile)
+      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false, metadata)
         .map { response =>
           Ok(Json.toJson(response))
         }

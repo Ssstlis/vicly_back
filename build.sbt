@@ -1,4 +1,3 @@
-
 val vicly_backend = project
   .in(file("."))
   .settings(
