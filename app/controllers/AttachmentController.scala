@@ -123,6 +123,10 @@ class AttachmentController @Inject()(
     }).valueOr(err => BadRequest(Json.obj("error" -> err)))
   }
 
+  def getAttachment(id: String) = authUtils.authenticateAction { request =>
+    Ok(Json.toJson(attachmentService.findById(id)))
+  }
+
   def list = authUtils.authenticateAction { request =>
     val user = request.user
     Ok(Json.toJson(attachmentService.findByUserId(user.id)))

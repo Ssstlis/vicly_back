@@ -1,15 +1,13 @@
 package daos
 
-import scala.language.postfixOps
-import scala.sys.process._
-import scala.util.Try
-
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.commons.MongoDBObject
 import models.Attachment
 import org.bson.types.ObjectId
 import ru.tochkak.plugin.salat.PlaySalat
 import salat.dao.{ModelCompanion, SalatDAO}
+
+import scala.language.postfixOps
 
 @Singleton
 class AttachmentDao @Inject()(
@@ -44,10 +42,9 @@ class AttachmentDao @Inject()(
     }
   }
 
-  def findByUserId(uuid: String, userId: Int) = {
+  def findById(id: String) = {
     dao.findOne(MongoDBObject(
-      "uuid" -> uuid,
-      "user_id" -> userId
+      "_id" -> new ObjectId(id)
     ))
   }
 
