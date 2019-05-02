@@ -96,7 +96,7 @@ class AttachmentService @Inject()(
           .map { response =>
             for {
               seaweedResponse <- response.json.asOpt(SeaweedResponse.reads()).toRight(new Exception("Seaweedfs saving error"))
-              attachment <- attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true,Map.empty)
+              attachment <- attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true, Map.empty)
                 .toRight(new Exception("BD fid saving error,but seaweedfs saved successfully"))
             } yield {
               userService.setAvatar(userId, attachment._id).wasAcknowledged()
@@ -175,6 +175,10 @@ class AttachmentService @Inject()(
 
   def findByUserId(userId: Int) = {
     attachmentDao.findByUserId(userId)
+  }
+
+  def findById(id: String) = {
+    attachmentDao.findById(id)
   }
 
   //  def remove(userId: Int, uuid: String, path: String) = attachmentDao.remove(userId, uuid, path)

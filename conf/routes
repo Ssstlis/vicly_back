@@ -44,6 +44,7 @@ POST        /api/chat/archive                                        controllers
 GET         /ws/:token                                               controllers.WsController.subscribe(token: String)
 
 #Attachments
+GET         /api/attachment/:id                                      controllers.AttachmentController.getAttachment(id: String)
 POST        /api/attachment/upload                                   controllers.AttachmentController.upload
 POST        /api/attachment/upload_avatar                            controllers.AttachmentController.uploadAvatar
 GET         /api/attachment/download/:id                             controllers.AttachmentController.download(id: String)
