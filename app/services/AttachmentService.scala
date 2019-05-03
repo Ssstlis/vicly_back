@@ -42,7 +42,7 @@ class AttachmentService @Inject()(
   val seaweedfs_volume_url = config.get[String]("seaweed.address.volume")
   val seaweedfs_master_url = config.get[String]("seaweed.address.master")
 
-  def saveFileNew(file: File, originalFilename: String, userId: Int, isAvatar: Boolean, metadata: Map[String, String]) = {
+  def saveFileNew(file: File, originalFilename: String, userId: Int, isAvatar: Boolean, metadata: Map[String, String], mime: String = "application/octet-stream") = {
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
     val dataPart = DataPart("key", "value")
 
@@ -51,7 +51,7 @@ class AttachmentService @Inject()(
       .post(Source(filePart :: dataPart :: Nil))
       .map { response =>
         response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar, metadata)
+          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar, metadata, mime)
             .map { attachment =>
               // TODO old avatar file deleting
               userService.setAvatar(userId, attachment._id)
@@ -96,7 +96,7 @@ class AttachmentService @Inject()(
           .map { response =>
             for {
               seaweedResponse <- response.json.asOpt(SeaweedResponse.reads()).toRight(new Exception("Seaweedfs saving error"))
-              attachment <- attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true, Map.empty)
+              attachment <- attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true, Map.empty, "image/*")
                 .toRight(new Exception("BD fid saving error,but seaweedfs saved successfully"))
             } yield {
               userService.setAvatar(userId, attachment._id).wasAcknowledged()

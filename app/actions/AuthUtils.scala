@@ -32,6 +32,8 @@ class AuthUtils @Inject()(
     override protected def executionContext = ec
   }
 
+
+
   val authenticateAction: AbstractActionBuilder[UserRequest] = new AbstractActionBuilder[UserRequest] {
     def decodeToken(token: String) = {
       JwtJson.decodeJson(token, config.secret_key, Seq(config.algo)).toOption
@@ -44,6 +46,29 @@ class AuthUtils @Inject()(
       (for {
         token <- request.headers.get("Authorization")
         json <- decodeToken(token)
+        userId <- (json \ "user_id").asOpt[ObjectId]
+        login <- (json \ "login").asOpt[String]
+        password <- (json \ "password").asOpt[String]
+        user <- userService.find(userId, login, password)
+      } yield {
+        userService.updateActivity(user.id)(user.groupId)
+        block(UserRequest(user, request))
+      }).getOrElse(Future.successful(Results.Forbidden))
+    }
+  }
+
+  val authenticateFromURLAction: AbstractActionBuilder[UserRequest] = new AbstractActionBuilder[UserRequest] {
+    def decodeToken(token: String) = {
+      JwtJson.decodeJson(token, config.secret_key, Seq(config.algo)).toOption
+    }
+
+    override def invokeBlock[A](
+      request: Request[A],
+      block: UserRequest[A] => Future[Result]
+    ) = {
+      (for {
+        token <- request.target.queryMap.get("token")
+        json <- decodeToken(token.head)
         userId <- (json \ "user_id").asOpt[ObjectId]
         login <- (json \ "login").asOpt[String]
         password <- (json \ "password").asOpt[String]

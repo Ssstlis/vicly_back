@@ -11,9 +11,9 @@ import scala.language.postfixOps
 
 @Singleton
 class AttachmentDao @Inject()(
-                               mongoContext: MongoContext,
-                               playSalat: PlaySalat
-                             ) extends ModelCompanion[Attachment, ObjectId] {
+  mongoContext: MongoContext,
+  playSalat: PlaySalat
+) extends ModelCompanion[Attachment, ObjectId] {
 
   import mongoContext._
 
@@ -26,11 +26,11 @@ class AttachmentDao @Inject()(
   //    }.exists(_.wasAcknowledged)
   //  }
 
-  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String]) = {
-    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, metadata))
-      result.flatMap { objectId =>
-        dao.findOneById(objectId)
-      }
+  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String) = {
+    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, metadata, mime))
+    result.flatMap { objectId =>
+      dao.findOneById(objectId)
+    }
   }
 
   def find(id: String) = {
@@ -38,7 +38,7 @@ class AttachmentDao @Inject()(
       val objectId = new ObjectId(id)
       dao.findOne(MongoDBObject("_id" -> objectId))
     } catch {
-      case _:IllegalArgumentException => None
+      case _: IllegalArgumentException => None
     }
   }
 
