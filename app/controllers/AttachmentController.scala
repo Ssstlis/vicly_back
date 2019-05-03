@@ -3,20 +3,20 @@ package controllers
 import java.io.{File, FileInputStream}
 
 import actions.AuthUtils
+import cats.data._
+import cats.implicits._
 import com.google.inject.{Inject, Singleton}
+import org.apache.tika.Tika
+import org.apache.tika.metadata._
+import org.xml.sax.SAXException
 import play.api.Configuration
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
-import play.api.mvc.InjectedController
+import play.api.mvc.{InjectedController, ResponseHeader, Result}
 import services.{AttachmentService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
-import cats.implicits._
-import cats.data._
-import org.apache.tika.metadata._
-import org.bson.types.ObjectId
-import org.xml.sax.SAXException
 
 @Singleton
 class AttachmentController @Inject()(
@@ -45,29 +45,32 @@ class AttachmentController @Inject()(
   //    }).getOrElse(BadRequest)
   //  }
 
+  import java.io.IOException
+
   import org.apache.tika.exception.TikaException
   import org.apache.tika.parser.AutoDetectParser
   import org.apache.tika.sax.BodyContentHandler
-  import java.io.IOException
-  import java.io.InputStream
 
   @throws[IOException]
   @throws[SAXException]
   @throws[TikaException]
-  def parseExample(file: File): Map[String, String] = {
+  def parseExample(file: File): Tuple2[Map[String, String], String] = {
     val parser = new AutoDetectParser
     val handler = new BodyContentHandler
     val metadata = new Metadata
+
+    val tika = new Tika
     try {
       val stream = new FileInputStream(file)
       try {
         parser.parse(stream, handler, metadata)
-        (for (key <- metadata.names()) yield (key, metadata.get(key))).toMap
+        val mimeType = tika.detect(file)
+        ((for (key <- metadata.names()) yield (key, metadata.get(key))).toMap, mimeType)
       } finally if (stream != null) stream.close()
     } catch {
       case err: Throwable => {
         println(err.toString)
-        Map("fulfilled" -> "error")
+        (Map("fulfilled" -> "error"), "application/octet-stream ")
       }
     }
   }
@@ -76,8 +79,8 @@ class AttachmentController @Inject()(
     val user = request.user
 
     request.body.file("file").map { file =>
-      val metadata = parseExample(file.ref.toFile)
-      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false, metadata)
+      val (metadata, mime) = parseExample(file.ref.toFile)
+      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false, metadata, mime)
         .map { response =>
           Ok(Json.toJson(response))
         }
@@ -100,12 +103,15 @@ class AttachmentController @Inject()(
   }
 
   def download(id: String) = authUtils.authenticateAction.async { request =>
-    val user = request.user
 
     attachmentService.getFile(id).collect { case file =>
       file.map { optStream =>
         optStream.map { stream =>
-          Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
+          Result(
+            header = ResponseHeader(200, Map.empty),
+            body = HttpEntity.Streamed(stream, None, None)
+          )
+          //          Ok.sendEntity(HttpEntity.Streamed(stream, None, Some("application/")))
         }.getOrElse(Gone)
       }
     }.getOrElse(Future {

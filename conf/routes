@@ -60,3 +60,4 @@ GET         /api/role/remove/:id                                     controllers
 GET         /api/role/list                                           controllers.RoleController.list
 GET         /api/role/one/:id                                        controllers.RoleController.one(id: Int)
 GET         /api/role/one/:id/no_auth                                controllers.RoleController.oneNoAuth(id: Int)
+
