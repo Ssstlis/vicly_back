@@ -23,11 +23,11 @@ import scala.util.{Failure, Success}
 
 @Singleton
 class AttachmentService @Inject()(
-  attachmentDao: AttachmentDao,
-  config: Configuration,
-  userService: UserService,
-  ws: WSClient
-)(implicit ec: ExecutionContext) {
+                                   attachmentDao: AttachmentDao,
+                                   config: Configuration,
+                                   userService: UserService,
+                                   ws: WSClient
+                                 )(implicit ec: ExecutionContext) {
 
   //  def postFile(wsClient: StandaloneWSClient) = {
   //    import play.api.mvc.MultipartFormData.FilePart
@@ -52,12 +52,6 @@ class AttachmentService @Inject()(
       .map { response =>
         response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
           attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar, metadata, mime)
-            .map { attachment =>
-              // TODO old avatar file deleting
-              userService.setAvatar(userId, attachment._id)
-              attachment
-            }
-
         }
       }
       .recover { case ex =>
