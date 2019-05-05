@@ -47,7 +47,7 @@ GET         /ws/:token                                               controllers
 GET         /api/attachment/:id                                      controllers.AttachmentController.getAttachment(id: String)
 POST        /api/attachment/upload                                   controllers.AttachmentController.upload
 POST        /api/attachment/upload_avatar                            controllers.AttachmentController.uploadAvatar
-GET         /api/attachment/download/:id                             controllers.AttachmentController.download(id: String)
+GET         /api/attachment/download/:id                             controllers.AttachmentController.download(id: String, width: Option[Int])
 GET         /api/attachment/download_avatar/:user_id                 controllers.AttachmentController.downloadAvatar(user_id:Int, width: Option[Int])
 GET         /api/attachment/user/list                                controllers.AttachmentController.list
 POST        /api/attachment/list                                     controllers.AttachmentController.list

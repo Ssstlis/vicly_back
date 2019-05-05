@@ -6,7 +6,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.google.inject.{Inject, Singleton}
 import daos.AttachmentDao
-import models.{SeaweedResponse, User}
+import models.{Attachment, SeaweedResponse, User}
 import org.bson.types.ObjectId
 import play.api.libs.ws.WSClient
 import play.api.mvc.MultipartFormData
@@ -29,15 +29,14 @@ class AttachmentService @Inject()(
                                    ws: WSClient
                                  )(implicit ec: ExecutionContext) {
 
-  //  def postFile(wsClient: StandaloneWSClient) = {
-  //    import play.api.mvc.MultipartFormData.FilePart
-  //    val io = FileIO.fromPath(Paths.get("/home/spoofer/nginx-1.12.0.tar.gz"))
-  //    val f = FilePart("uploadTransfer", "nginx-1.12.0.tar.gz",
-  //      Some("application/octet-stream"), io)
-  //    val s = Source.single(f)
-  //
-  //    wsClient.url("http://localhost:9001/uploadTransfer".post(s)
-  //  }
+  def isImageType(attachment: Attachment) = {
+    if (attachment.mime.startsWith("image/")) {
+      true
+    }
+    else {
+      false
+    }
+  }
 
   val seaweedfs_volume_url = config.get[String]("seaweed.address.volume")
   val seaweedfs_master_url = config.get[String]("seaweed.address.master")
@@ -124,11 +123,15 @@ class AttachmentService @Inject()(
   //        None
   //      }
 
-  def getFile(id: String) = {
+  def getFile(id: String, width: Option[Int]) = {
     attachmentDao.find(id)
       .collect {
         case attachment =>
-          val url = seaweedfs_master_url + "/" + attachment.fid
+          var url: String = seaweedfs_master_url + "/" + attachment.fid
+          if (this.isImageType(attachment) && width.isDefined) {
+            url += "?width=" + width.get
+          }
+
           ws.url(url)
             .withMethod("GET")
             .stream()
