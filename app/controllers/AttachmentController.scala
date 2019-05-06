@@ -105,12 +105,12 @@ class AttachmentController @Inject()(
 
   def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async { request =>
 
-    attachmentService.getFile(id, width).collect { case file =>
-      file.map { optStream =>
+    attachmentService.getFile(id, width).collect { case fileFuture =>
+      fileFuture.map { optStream =>
         optStream.map { stream =>
           Result(
             header = ResponseHeader(200, Map.empty),
-            body = HttpEntity.Streamed(stream, None, None)
+            body = HttpEntity.Streamed(stream._1, Some(stream._2), Some(stream._3))
           )
           //          Ok.sendEntity(HttpEntity.Streamed(stream, None, Some("application/")))
         }.getOrElse(Gone)

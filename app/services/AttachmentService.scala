@@ -138,7 +138,7 @@ class AttachmentService @Inject()(
             .map {
               response =>
                 if (response.status < 300 && response.status >= 200)
-                  Some(response.bodyAsSource)
+                  Some((response.bodyAsSource, attachment.size, attachment.mime))
                 else
                   None
             }
