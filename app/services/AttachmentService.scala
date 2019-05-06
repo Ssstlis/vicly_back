@@ -137,10 +137,14 @@ class AttachmentService @Inject()(
             .stream()
             .map {
               response =>
-                if (response.status < 300 && response.status >= 200)
-                  Some((response.bodyAsSource, attachment.size, attachment.mime))
-                else
+                if (response.status < 300 && response.status >= 200) {
+                  val lenght =  if (response.header("Content-Length").isDefined) response.header("Content-Length").get.toLong else null
+                  Some((response.bodyAsSource, Option(lenght), attachment.mime))
+                }
+                else {
                   None
+                }
+
             }
       }
   }
