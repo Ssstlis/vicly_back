@@ -3,6 +3,8 @@ package controllers
 import java.io.{File, FileInputStream}
 
 import actions.AuthUtils
+import akka.protobuf.ByteString
+import akka.stream.scaladsl.Source
 import cats.data._
 import cats.implicits._
 import com.google.inject.{Inject, Singleton}
@@ -71,7 +73,7 @@ class AttachmentController @Inject()(
     } catch {
       case err: Throwable => {
         println(err.toString)
-        (Map("fulfilled" -> "error"), "application/octet-stream ")
+        (Map("fulfilled" -> "error"), "application/octet-stream")
       }
     }
   }
@@ -107,12 +109,12 @@ class AttachmentController @Inject()(
 
     attachmentService.getFile(id, width).map { fileFuture =>
       fileFuture.map { optStream =>
-        optStream.map { case (source, size, mime) =>
-          Result(
-            header = ResponseHeader(200, Map.empty),
-            body = HttpEntity.Streamed(source, Some(size), None)
-          )
-          //          Ok.sendEntity(HttpEntity.Streamed(stream, None, Some("application/")))
+        optStream.map { case (source, size:Option[Long], mime) =>
+          size match {
+            case Some(size) => Ok.streamed(source, Some(size), Some(mime))
+            case None => Ok.chunked(source).as(mime)
+          }
+
         }.getOrElse(Gone)
       }
     }.getOrElse(Future {
