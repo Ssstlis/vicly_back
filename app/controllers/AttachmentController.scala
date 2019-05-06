@@ -20,11 +20,11 @@ import scala.language.postfixOps
 
 @Singleton
 class AttachmentController @Inject()(
-  attachmentService: AttachmentService,
-  authUtils: AuthUtils,
-  config: Configuration,
-  userService: UserService
-)(implicit ec: ExecutionContext) extends InjectedController {
+                                      attachmentService: AttachmentService,
+                                      authUtils: AuthUtils,
+                                      config: Configuration,
+                                      userService: UserService
+                                    )(implicit ec: ExecutionContext) extends InjectedController {
 
   val path = config.get[String]("path.upload")
 
@@ -51,6 +51,7 @@ class AttachmentController @Inject()(
   import org.apache.tika.parser.AutoDetectParser
   import org.apache.tika.sax.BodyContentHandler
 
+  //TODO Replace code!
   @throws[IOException]
   @throws[SAXException]
   @throws[TikaException]
@@ -102,9 +103,9 @@ class AttachmentController @Inject()(
     }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in in formdata!"))))
   }
 
-  def download(id: String) = authUtils.authenticateAction.async { request =>
+  def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async { request =>
 
-    attachmentService.getFile(id).collect { case file =>
+    attachmentService.getFile(id, width).collect { case file =>
       file.map { optStream =>
         optStream.map { stream =>
           Result(
