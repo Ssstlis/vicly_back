@@ -110,7 +110,7 @@ class AttachmentController @Inject()(
         optStream.map { case (source, size, mime) =>
           Result(
             header = ResponseHeader(200, Map.empty),
-            body = HttpEntity.Streamed(source, Some(size), Some(mime))
+            body = HttpEntity.Streamed(source, Some(size), None)
           )
           //          Ok.sendEntity(HttpEntity.Streamed(stream, None, Some("application/")))
         }.getOrElse(Gone)
