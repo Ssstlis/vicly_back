@@ -37,7 +37,6 @@ class ChatController @Inject()(
       userIds <- (json \ "user_ids").asOpt[List[Int]] if userIds.nonEmpty
       name <- (json \ "name").asOpt[String]
       purpose = (json \ "purpose").asOpt[String]
-      if userService.usersSameGroupNonArchive(userIds, groupId)
       ids = userIds.distinct
       if chatService.createGroupChat(ids, Some(groupId), user._id, name, purpose)
     } yield {
