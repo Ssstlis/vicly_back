@@ -79,8 +79,8 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
       (_: Int) => subscriberService.allSubscribers)
   }
 
-  def newGroupChat(groupId: Int, userIds: List[Int]) = {
-    push(21, groupId, Json.toJson(userIds), userIds.contains,
+  def newGroupChat(chat:Chat) = {
+    push(21, 0, Json.toJson(chat), chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 

@@ -7,11 +7,11 @@ import services.{ChatService, SocketNotificationService, UserService}
 
 @Singleton
 class ChatController @Inject()(
-  authUtils: AuthUtils,
-  chatService: ChatService,
-  socketNotificationService: SocketNotificationService,
-  userService: UserService
-) extends InjectedController {
+                                authUtils: AuthUtils,
+                                chatService: ChatService,
+                                socketNotificationService: SocketNotificationService,
+                                userService: UserService
+                              ) extends InjectedController {
 
   /**
     * @api {POST} /api/chat/create  Create new chat
@@ -21,11 +21,11 @@ class ChatController @Inject()(
     * @apiParam {String}        name     Title of chat.
     * @apiParam {String}           purpose  Purpose for chat.
     * @apiParamExample {json} Request-body:
-    * {
-    *     "user_ids":[54,12,6],
-    *     "name":"New LOL chat",
-    *     "purpose":"Fake purpose!"
-    * }
+    *                  {
+    *                  "user_ids":[54,12,6],
+    *                  "name":"New LOL chat",
+    *                  "purpose":"Fake purpose!"
+    *                  }
     * @apiDescription Create new chat in same group with user, which make request.
     */
   def create = authUtils.authenticateAction(parse.json) { request =>
@@ -38,9 +38,10 @@ class ChatController @Inject()(
       name <- (json \ "name").asOpt[String]
       purpose = (json \ "purpose").asOpt[String]
       ids = userIds.distinct
-      if chatService.createGroupChat(ids, Some(groupId), user._id, name, purpose)
     } yield {
-      socketNotificationService.newGroupChat(groupId, userIds)
+      chatService.createGroupChat(ids, Some(groupId), user._id, name, purpose).map(chat => {
+        socketNotificationService.newGroupChat(chat)
+      }).getOrElse(BadRequest)
       Ok
     }).getOrElse(BadRequest)
   }
@@ -53,11 +54,11 @@ class ChatController @Inject()(
     * @apiParam {String}        name     Title of chat.
     * @apiParam {String}           purpose  Purpose for chat.
     * @apiParamExample {json} Request-body:
-    * {
-    *     "user_ids":[54,12,6],
-    *     "name":"New LOL chat",
-    *     "purpose":"Fake purpose!"
-    * }
+    *                  {
+    *                  "user_ids":[54,12,6],
+    *                  "name":"New LOL chat",
+    *                  "purpose":"Fake purpose!"
+    *                  }
     * @apiDescription Create new chat in same group with user, which make request.
     */
   def add = authUtils.authenticateAction(parse.json) { request =>
