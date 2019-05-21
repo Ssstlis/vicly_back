@@ -79,7 +79,9 @@ class ChatDao @Inject()(
 
   def createGroupChat(userIds: List[Int], groupId: Option[Int] = None, ownerId: ObjectId, name: String, purpose: Option[String] = None) = {
     val chat = Chat(maxId + 1, groupId, userIds, "group", Some(false), Some(ownerId), Some(name), purpose)
-    dao.insert(chat).isDefined
+    dao.insert(chat).flatMap(chatId => {
+      dao.findOneById(chatId)
+    })
   }
 
   def findGroupChat(id: Int) = {
