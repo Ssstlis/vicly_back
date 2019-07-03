@@ -4,13 +4,34 @@ import com.google.inject.{Inject, Singleton}
 import daos.UserDao
 import models.User
 import org.bson.types.ObjectId
+import pdi.jwt.JwtJson
 import utils.Helper.StringExtended
 
 @Singleton
 class UserService @Inject()(
-  socketNotificationService: SocketNotificationService,
-  userDao: UserDao
-) {
+                             socketNotificationService: SocketNotificationService,
+                             config: ConfigService,
+                             userDao: UserDao
+                           ) {
+
+  def signup(user: User) = {
+    findByLogin(user.login).map { user =>
+      create(user).wasAcknowledged()
+    }
+  }
+
+  def login(login: String, password: String) = {
+    findByLoginAndPassword(login, password).map { user =>
+      setActive(user)
+      updateActivity(user.id)(user.groupId)
+      (JwtJson.encode(user.claim, config.secret_key, config.algo), user)
+    }
+  }
+
+  def logout(user: User): Unit = {
+    socketNotificationService.offline(user.groupId, user.id)
+    setInactive(user)
+  }
 
   def maxId = userDao.maxId
 

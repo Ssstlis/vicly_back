@@ -80,6 +80,7 @@ class AttachmentService @Inject()(
         }
     }.getOrElse(Future.successful(Right("Not needed deleting!")))
 
+
     deleteResult.flatMap {
       case Left(ex) => Future.successful(Left(ex))
       case Right(_) =>
@@ -138,7 +139,7 @@ class AttachmentService @Inject()(
             .map {
               response =>
                 if (response.status < 300 && response.status >= 200) {
-                  val lenght =  if (response.header("Content-Length").isDefined) response.header("Content-Length").get.toLong else null
+                  val lenght = if (response.header("Content-Length").isDefined) response.header("Content-Length").get.toLong else null
                   Some((response.bodyAsSource, Option(lenght), attachment.mime))
                 }
                 else {
@@ -164,9 +165,10 @@ class AttachmentService @Inject()(
           .collect {
             case response if response.status < 300 && response.status >= 200 =>
               response.bodyAsSource
-          }.map(Some(_)).recover {
-          case _ => None
-        }
+          }.map(Some(_))
+          .recover {
+            case _ => None
+          }
     }.fold {
       EitherT.leftT[Future, Source[ByteString, _]]("Can't find avatar in DB")
     } {

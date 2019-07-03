@@ -24,31 +24,25 @@ class UserController @Inject()(
 
   def signup = Action(parse.json(User.reads(userService.nextId))) { request =>
     val user = request.body
-    userService.findByLogin(user.login).fold {
-      userService.create(user)
+    userService.signup(user).fold {
       Ok
     }(_ => BadRequest)
   }
 
   def login = Action(parse.json) { request =>
     val json = request.body
-    (for {login <- (json \ "login").asOpt[String]
-          password <- (json \ "password").asOpt[String]
-          user <- userService.findByLoginAndPassword(login, password)
+    (for {
+      login <- (json \ "login").asOpt[String]
+      password <- (json \ "password").asOpt[String]
+      (token, user) <- userService.login(login, password)
     } yield {
-      userService.setActive(user)
-      userService.updateActivity(user.id)(user.groupId)
-
-      val token = JwtJson.encode(user.claim, config.secret_key, config.algo)
       Ok(Json.toJson(user)(User.writesWithToken(token)))
-    }).getOrElse(BadRequest)
+    }).getOrElse(BadRequest(Json.obj("error" -> "Login or password incorrect")))
   }
 
   def logout = authUtils.authenticateAction { request =>
-    val user = request.user
-    socketNotificationService.offline(user.groupId, user.id)
-    userService.setInactive(user)
-    Ok.withHeaders()
+    userService.logout(request.user)
+    Ok
   }
 
   def list = authUtils.authenticateAction { request =>
