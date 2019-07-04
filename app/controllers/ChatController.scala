@@ -78,6 +78,19 @@ class ChatController @Inject()(
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/chat/remove  Remove user from chat
+    * @apiName Remove user from chat
+    * @apiGroup Chats
+    * @apiParam {Int}           chat_id Chat's id for user removing.
+    * @apiParam {Int}           user_id User which must removed from chat.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "chat_id":"1",
+    *                  "user_id":"5",
+    *                  }
+    * @apiDescription Remove user from group chat. if you're chat owner and user isn't owner)).
+    */
   def remove = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
@@ -85,7 +98,6 @@ class ChatController @Inject()(
     (for {
       groupId <- user.groupId
       chatId <- (json \ "chat_id").asOpt[Int]
-      _@"group" <- (json \ "chat_type").asOpt[String]
       userId <- (json \ "user_id").asOpt[Int]
       userAdd <- userService.findOne(userId) if userAdd.groupId.contains(groupId)
       chat <- chatService.findGroupChat(chatId) if chat.userIds.contains(userId)
@@ -97,6 +109,17 @@ class ChatController @Inject()(
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/chat/archive  Archive chat
+    * @apiName Archive chat
+    * @apiGroup Chats
+    * @apiParam {Int}           chat_id Chat's id for archivation.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "chat_id":"1"
+    *                  }
+    * @apiDescription Chat archivation if you're chat owner.
+    */
   def archive = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
@@ -112,6 +135,17 @@ class ChatController @Inject()(
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/chat/typing  Notify server when user typing message in chat
+    * @apiName Notify server when user typing message in chat
+    * @apiGroup Chats
+    * @apiParam {Int}           chat_id Chat's id for notify.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "chat_id":"1"
+    *                  }
+    * @apiDescription Notify server when user typing message in chat.
+    */
   def typing = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user

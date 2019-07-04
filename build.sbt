@@ -16,3 +16,4 @@ val vicly_backend = project
     scalaVersion := "2.12.7"
   )
   .enablePlugins(PlayScala)
+

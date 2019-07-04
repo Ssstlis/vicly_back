@@ -11,28 +11,23 @@ import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class MessageController @Inject()(
-  authUtils: AuthUtils,
-  chatService: ChatService,
-  messageService: MessageService,
-  userService: UserService
-) extends InjectedController {
+                                   authUtils: AuthUtils,
+                                   chatService: ChatService,
+                                   messageService: MessageService,
+                                   userService: UserService
+                                 ) extends InjectedController {
 
-  def postnewchat = authUtils.authenticateAction(parse.json) { request =>
-    val user = request.user
+  def sendMessageInChat = authUtils.authenticateAction(parse.json) { request =>
+    implicit val user = request.user
     val json = request.body
 
     (for {
-      userGroupId <- user.groupId
       message <- json.asOpt(Message.reads(user.id))
     } yield {
-      val replyForO = (json \ "reply_for").asOpt[ObjectId]
-      chatService.findGroupChatWithUser(user.id, message.chatId).collect { case chat
-        if {
-          val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-          messageService.save(filledMessage)(chat).wasAcknowledged()
-        } => Ok
-      }.getOrElse(BadRequest)
-    }).getOrElse(BadRequest)
+      messageService.sendMessageInChat(message).fold {
+        BadRequest
+      }(_ => Ok)
+    }).getOrElse(BadRequest(Json.obj("error" -> "Wrong json!")))
   }
 
   def postnewuser = authUtils.authenticateAction(parse.json) { request =>
@@ -60,7 +55,7 @@ class MessageController @Inject()(
         }.getOrElse {
           if (
             userService.findOne(targetUserId).isDefined &&
-            chatService.createUserChat(user.id, targetUserId, groupId)
+              chatService.createUserChat(user.id, targetUserId, groupId)
           ) {
             chatService.findUserChat(user.id, targetUserId).collect { case chat
               if {
@@ -78,39 +73,21 @@ class MessageController @Inject()(
     }).getOrElse(BadRequest)
   }
 
-  def groupChatMessages(chatId: Int, page: Int) = authUtils.authenticateAction { request =>
-    val messages = chatService.findById(chatId).map { chat =>
-      messageService.findByChatId(chat.id, page)
-    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
-    Ok(Json.toJson(messages))
+  def getGroupChatMessages(chatId: Int, page: Int) = authUtils.authenticateAction { _ =>
+    Ok(Json.toJson(messageService.getGroupChatMessages(chatId: Int, page: Int)))
   }
 
-  def userChatMessages(userId: Int, page: Int) = authUtils.authenticateAction { request =>
-    val user = request.user
-    val messages = chatService.findUserChat(user.id, userId).map { chat =>
-      messageService.findByChatId(chat.id, page)
-    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
-    Ok(Json.toJson(messages))
+  def getUserChatMessages(userId: Int, page: Int) = authUtils.authenticateAction { request =>
+    implicit val user = request.user
+    Ok(Json.toJson(messageService.getUserChatMessages(userId, page)))
   }
 
-  // TO DELETE FIXME
-  def unread(chatId: Int, chatType: String) = authUtils.authenticateAction { request =>
-    val user = request.user
-    val messages = (chatType match {
-      case "user" => chatService.findUserChat(user.id, chatId)
-      case "group" => chatService.findById(chatId)
-      case _ => None
-    }).map { chat =>
-      messageService.findUnreadMessages(chat.id, user.id)
-    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
-    Ok(Json.toJson(messages))
-  }
-
-  def userChatMessagesFrom(userId: Int, messageId: String) = authUtils.authenticateAction { request =>
-    val user = request.user
-    chatService.findUserChat(user.id, userId).map { chat =>
-      Ok(Json.toJson(messageService.findMessagesAfter(chat.id, new ObjectId(messageId))))
-    }.getOrElse(BadRequest(Json.obj("error" -> s"Can't find chat with user $userId")))
+  def getUserChatMessagesFrom(userId: Int, messageId: String) = authUtils.authenticateAction { request =>
+    implicit val user = request.user
+    messageService.getUserChatMessagesFrom(userId, messageId) match {
+      case Right(messages) => Ok(Json.toJson(messages))
+      case Left(error) => BadRequest(Json.obj("error" -> error))
+    }
   }
 
   def groupChatMessagesFrom(chatId: Int, messageId: String) = authUtils.authenticateAction { request =>
@@ -155,7 +132,7 @@ class MessageController @Inject()(
     } yield {
       if (message.from != user.id && chat.userIds.contains(user.id)) {
         messageService.delivery(oid)(chat).collect {
-          case _=> Ok
+          case _ => Ok
         }.getOrElse(BadRequest)
       } else {
         Forbidden

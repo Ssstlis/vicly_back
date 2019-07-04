@@ -2,15 +2,17 @@ package services
 
 import com.google.inject.{Inject, Singleton}
 import daos.MessageDao
-import models.{Chat, Message}
+import models.{Chat, Message, User}
 import org.bson.types.ObjectId
+import play.api.libs.json.Json
 import utils.Helper.StringExtended
 
 @Singleton
 class MessageService @Inject()(
-  messageDao: MessageDao,
-  socketNotificationService: SocketNotificationService
-)(implicit configService: ConfigService) {
+                                messageDao: MessageDao,
+                                chatService: ChatService,
+                                socketNotificationService: SocketNotificationService
+                              )(implicit configService: ConfigService) {
 
   implicit class MessageExtended(m: Message) {
     def encode = m.copy(text = m.text.encodeToken)
@@ -21,6 +23,31 @@ class MessageService @Inject()(
         text <- (json \ "text").asOpt[String]
       } yield m.copy(text = text)
     }
+  }
+
+  def sendMessageInChat(message: Message)(implicit user: User) = {
+    chatService.findGroupChatWithUser(user.id, message.chatId).map { case chat =>
+      val filledMessage = message.copy(chatId = chat.id, replyForO = message.replyForO)
+      save(filledMessage)(chat).wasAcknowledged()
+    }
+  }
+
+  def getGroupChatMessages(chatId: Int, page: Int) = {
+    chatService.findById(chatId).map { chat =>
+      findByChatId(chat.id, page)
+    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
+  }
+
+  def getUserChatMessages(userId: Int, page: Int)(implicit user: User) = {
+    chatService.findUserChat(user.id, userId).map { chat =>
+      findByChatId(chat.id, page)
+    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
+  }
+
+  def getUserChatMessagesFrom(userId: Int, messageId: String)(implicit user: User): Either[String, List[Message]] = {
+    chatService.findUserChat(user.id, userId).map { chat =>
+      Right(findMessagesAfter(chat.id, new ObjectId(messageId)))
+    }.getOrElse(Left("Can't find chat with user $userId"))
   }
 
   def all = messageDao.all.flatMap(_.decode)

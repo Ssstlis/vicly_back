@@ -4,13 +4,86 @@ import com.google.inject.{Inject, Singleton}
 import daos.UserDao
 import models.User
 import org.bson.types.ObjectId
+import pdi.jwt.JwtJson
 import utils.Helper.StringExtended
+import utils.CollectionHelper.TraversableOnceHelper
 
 @Singleton
 class UserService @Inject()(
-  socketNotificationService: SocketNotificationService,
-  userDao: UserDao
-) {
+                             socketNotificationService: SocketNotificationService,
+                             groupService: GroupService,
+                             chatService: ChatService,
+                             messageService: MessageService,
+                             config: ConfigService,
+                             userDao: UserDao
+                           ) {
+
+  def signup(user: User) = {
+    findByLogin(user.login).map { user =>
+      create(user).wasAcknowledged()
+    }
+  }
+
+  def login(login: String, password: String) = {
+    findByLoginAndPassword(login, password).map { user =>
+      setActive(user)
+      updateActivity(user.id)(user.groupId)
+      (JwtJson.encode(user.claim, config.secret_key, config.algo), user)
+    }
+  }
+
+  def logout(user: User): Unit = {
+    socketNotificationService.offline(user.groupId, user.id)
+    setInactive(user)
+  }
+
+  def listAll(user: User) = {
+    val groups = groupService.all.zipBy(_.id)
+
+    val users = all.map {
+      case user if user.groupId.isDefined => Right(user)
+      case user => Left(user)
+    }.par
+
+    val usersWithoutGroup = users.collect { case Left(user) => user }.toList
+
+    val usersWithGroup = users
+      .collect { case Right(user) => user }
+      .groupBy(_.groupId)
+      .map { case (groupIdO, users) => {
+        (for {
+          groupId <- groupIdO
+          group <- groups.get(groupId)
+        } yield {
+          Right(group -> users)
+        }).getOrElse(Left(users))
+      }
+      }
+
+    val withoutGroup = usersWithoutGroup ::: usersWithGroup.flatMap {
+      case Left(users) => users
+      case _ => List.empty[User]
+    }.toList
+
+    val withGroups = usersWithGroup.collect {
+      case Right((group, users)) =>
+        val usersWithMessages = users.seq.map { user =>
+          val chat = chatService.findUserChat(user.id, user.id)
+          val (unread, lastO) = chat.map { chat =>
+            messageService.findUnreadMessagesCount(chat.id, user.id) ->
+              messageService.findLastMessage(chat.id)
+          }.getOrElse(0L, None)
+          (user, unread, lastO, chat)
+        }
+        val groupChatMap = chatService.findGroupChatByGroupId(group.id)
+          .filter(chat => chat.userIds.contains(user.id))
+          .map(chat =>
+            chat.id -> (messageService.findUnreadMessagesCount(chat.id), messageService.findLastMessage(chat.id), chat)
+          ).toMap
+        group -> (usersWithMessages, groupChatMap)
+    }.toMap.seq
+    (withoutGroup, withGroups)
+  }
 
   def maxId = userDao.maxId
 
@@ -41,7 +114,17 @@ class UserService @Inject()(
     userDao.updateActivity(id)
   }
 
-  def updatePassword(id: Int, password: String) = userDao.updatePassword(id, password.md5.md5.md5)
+  def updatePassword(user: User, newPassword: String) = {
+    if (userDao.updatePassword(user.id, newPassword.md5.md5.md5).isUpdateOfExisting) {
+      findByLoginAndPassword(user.login, newPassword).map { user =>
+        setActive(user)
+        updateActivity(user.id)(user.groupId)
+        JwtJson.encode(user.claim, config.secret_key, config.algo)
+      }
+    } else {
+      None
+    }
+  }
 
   def findByIdNonArchive(id: Int) = userDao.findByIdNonArchive(id)
 

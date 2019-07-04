@@ -102,7 +102,7 @@ class AttachmentController @Inject()(
           case Left(ex) => BadRequest(Json.obj("error" -> ex.getLocalizedMessage))
           case Right(attachment) => Ok(Json.toJson(attachment))
         }
-    }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in in formdata!"))))
+    }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in formdata!"))))
   }
 
   def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async { request =>
