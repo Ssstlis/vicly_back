@@ -11,10 +11,8 @@ import services._
 @Singleton
 class UserController @Inject()(
                                 authUtils: AuthUtils,
-                                config: ConfigService,
                                 groupService: GroupService,
                                 inviteService: InviteService,
-
                                 socketNotificationService: SocketNotificationService,
                                 userService: UserService
                               ) extends InjectedController {

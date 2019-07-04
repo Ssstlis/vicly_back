@@ -59,14 +59,27 @@ class GroupController @Inject()(
     Ok(Json.toJson(groupService.all))
   }
 
+  /**
+    * @api {POST} /api/group/set_purpose  Set purpose for group
+    * @apiName Set purpose for group
+    * @apiGroup Workgroups
+    * @apiParam {Int}           group_id  Group id for change purpose.
+    * @apiParam {String}        purpose   New purpose for group.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "chat_id":"1",
+    *                  "purpose":"Frontend developers"
+    *                  }
+    * @apiDescription Set new purpose for workgroup.
+    */
   def setPurpose = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     (for {
-      id <- (json \ "id").asOpt[Int]
+      groupId <- (json \ "group_id").asOpt[Int]
       purpose <- (json \ "purpose").asOpt[String]
-      group <- groupService.findById(id) if group.owner.compareTo(request.user._id) == 0
+      group <- groupService.findById(groupId) if group.owner.compareTo(request.user._id) == 0
     } yield {
-      groupService.setPurpose(id, purpose).isUpdateOfExisting
+      groupService.setPurpose(groupId, purpose).isUpdateOfExisting
     }).fold(BadRequest)(_ => Ok)
   }
 }
