@@ -21,13 +21,13 @@ GET         /api/group/list                                          controllers
 POST        /api/group/set_purpose                                   controllers.GroupController.setPurpose
 
 #Messages
-POST        /api/message/postnewchat                                 controllers.MessageController.postnewchat
+POST        /api/message/postnewchat                                 controllers.MessageController.sendMessageInChat
 POST        /api/message/postnewuser                                 controllers.MessageController.postnewuser
 #GET         /api/message/chat/group/unread/:id                  controllers.MessageController.unread(id: Int)
-GET         /api/message/chat/user/from/:user_id/:message_id         controllers.MessageController.userChatMessagesFrom(user_id: Int, message_id:String)
+GET         /api/message/chat/user/from/:user_id/:message_id         controllers.MessageController.getUserChatMessagesFrom(user_id: Int, message_id:String)
 GET         /api/message/chat/group/from/:chat_id/:message_id        controllers.MessageController.groupChatMessagesFrom(chat_id: Int, message_id:String)
-GET         /api/message/chat/group/:chat_id/:page                   controllers.MessageController.groupChatMessages(chat_id: Int, page: Int)
-GET         /api/message/chat/user/:user_id/:page                    controllers.MessageController.userChatMessages(user_id: Int, page: Int)
+GET         /api/message/chat/group/:chat_id/:page                   controllers.MessageController.getGroupChatMessages(chat_id: Int, page: Int)
+GET         /api/message/chat/user/:user_id/:page                    controllers.MessageController.getUserChatMessages(user_id: Int, page: Int)
 POST        /api/message/readnew                                     controllers.MessageController.readnew
 POST        /api/message/deliverynew                                 controllers.MessageController.deliverynew
 POST        /api/message/delete                                      controllers.MessageController.delete
@@ -60,4 +60,3 @@ GET         /api/role/remove/:id                                     controllers
 GET         /api/role/list                                           controllers.RoleController.list
 GET         /api/role/one/:id                                        controllers.RoleController.one(id: Int)
 GET         /api/role/one/:id/no_auth                                controllers.RoleController.oneNoAuth(id: Int)
-
