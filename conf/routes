@@ -1,7 +1,6 @@
 #User
 POST        /api/user/login                                          controllers.UserController.login
 GET         /api/user/logout                                         controllers.UserController.logout
-POST        /api/user/signup                                         controllers.UserController.signup
 GET         /api/user/list                                           controllers.UserController.list
 POST        /api/user/update_password                                controllers.UserController.updatePassword
 GET         /api/user/archive                                        controllers.UserController.archive(userId: Option[Int])

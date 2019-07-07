@@ -17,6 +17,21 @@ class MessageController @Inject()(
                                    userService: UserService
                                  ) extends InjectedController {
 
+  /**
+    * @api {POST} /api/message/postnewchat  Post in group chat
+    * @apiName  Post in group chat
+    * @apiGroup Message
+    * @apiParam {Array[String]}    attachments  Array of attachments ids in message.
+    * @apiParam {Int}              chat_id      Chat id for post message.
+    * @apiParam {String}           message      Message text.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "attachments": []
+    *                  "chat_id": 11
+    *                  "message": "PRIVET PRIVET"
+    *                  }
+    * @apiDescription Send message in group chat.
+    */
   def sendMessageInChat = authUtils.authenticateAction(parse.json) { request =>
     implicit val user = request.user
     val json = request.body
@@ -30,6 +45,21 @@ class MessageController @Inject()(
     }).getOrElse(BadRequest(Json.obj("error" -> "Wrong json!")))
   }
 
+  /**
+    * @api {POST} /api/message/postnewuser  Post in user chat
+    * @apiName Post in user chat
+    * @apiGroup Message
+    * @apiParam {Array[String]}    attachments  Array of attachments ids in message.
+    * @apiParam {Int}              chat_id      User id for post message.
+    * @apiParam {String}           message      Message text.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "attachments": []
+    *                  "chat_id": 11
+    *                  "message": "PRIVET PRIVET"
+    *                  }
+    * @apiDescription Send message in user chat.
+    */
   def postnewuser = authUtils.authenticateAction(parse.json) { request =>
     val user = request.user
     val json = request.body
@@ -40,48 +70,60 @@ class MessageController @Inject()(
     } yield {
       val replyForO = (json \ "reply_for").asOpt[ObjectId]
       val targetUserId = message.chatId
-      if (targetUserId != 0 && userService.findByIdNonArchive(targetUserId).isDefined) {
-        chatService.findUserChat(user.id, targetUserId).map { chat =>
-          if (
-            userService.findOne(targetUserId).isDefined && {
+      if (targetUserId != 0 && userService.findByIdNonArchive(targetUserId).isDefined) chatService.findUserChat(user.id, targetUserId).map { chat =>
+        if (
+          userService.findOne(targetUserId).isDefined && {
+            val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+            messageService.save(filledMessage)(chat).wasAcknowledged()
+          }
+        ) Ok else ResetContent
+      }.getOrElse {
+        if (
+          userService.findOne(targetUserId).isDefined &&
+            chatService.createUserChat(user.id, targetUserId, groupId)
+        ) chatService.findUserChat(user.id, targetUserId).collect { case chat
+            if {
               val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
               messageService.save(filledMessage)(chat).wasAcknowledged()
-            }
-          ) {
-            Ok
-          } else {
-            ResetContent
-          }
-        }.getOrElse {
-          if (
-            userService.findOne(targetUserId).isDefined &&
-              chatService.createUserChat(user.id, targetUserId, groupId)
-          ) {
-            chatService.findUserChat(user.id, targetUserId).collect { case chat
-              if {
-                val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-                messageService.save(filledMessage)(chat).wasAcknowledged()
-              } => Ok
-            }.getOrElse(BadRequest)
-          } else {
-            BadRequest
-          }
-        }
-      } else {
-        BadRequest
-      }
+            } => Ok
+          }.getOrElse(BadRequest) else BadRequest
+      } else BadRequest
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {GET} /api/message/chat/group/:chat_id/:page  Get group chat message
+    * @apiName Get group chat message
+    * @apiGroup Message
+    * @apiParam {Int}              chat_id      Chat id.
+    * @apiParam {Int}              page         Page of messages paginated list.
+    * @apiDescription Return page of messages from chat where every page consist of 20 messages.
+    */
   def getGroupChatMessages(chatId: Int, page: Int) = authUtils.authenticateAction { _ =>
     Ok(Json.toJson(messageService.getGroupChatMessages(chatId: Int, page: Int)))
   }
 
+  /**
+    * @api {GET} /api/message/chat/user/:user_id/:page       Get user chat message
+    * @apiName Get user chat message
+    * @apiGroup Message
+    * @apiParam {Int}              user_id      User id.
+    * @apiParam {Int}              page         Page of messages paginated list.
+    * @apiDescription Return page of messages from uesr chat where every page consist of 20 messages.
+    */
   def getUserChatMessages(userId: Int, page: Int) = authUtils.authenticateAction { request =>
     implicit val user = request.user
     Ok(Json.toJson(messageService.getUserChatMessages(userId, page)))
   }
 
+  /**
+    * @api {GET} /api/message/user/from/:user_id/:message_id  Get user chat message from
+    * @apiName Get user chat message from
+    * @apiGroup Message
+    * @apiParam {Int}              user_id         User id.
+    * @apiParam {Int}              message_id      Id of message. which will start point for get last message .
+    * @apiDescription Return page of messages from chat.
+    */
   def getUserChatMessagesFrom(userId: Int, messageId: String) = authUtils.authenticateAction { request =>
     implicit val user = request.user
     messageService.getUserChatMessagesFrom(userId, messageId) match {
@@ -90,12 +132,31 @@ class MessageController @Inject()(
     }
   }
 
+  /**
+    * @api {GET} /api/message/group/from/:user_id/:message_id  Get group chat message from
+    * @apiName Get group chat message from
+    * @apiGroup Message
+    * @apiParam {Int}              user_id         User id.
+    * @apiParam {Int}              message_id      Id of message. which will start point for get last message .
+    * @apiDescription Return page of messages from chat.
+    */
   def groupChatMessagesFrom(chatId: Int, messageId: String) = authUtils.authenticateAction { request =>
     chatService.findGroupChat(chatId).map { chat =>
       Ok(Json.toJson(messageService.findMessagesAfter(chat.id, new ObjectId(messageId))))
     }.getOrElse(BadRequest(Json.obj("error" -> s"Can't find group chat with id $chatId")))
   }
 
+  /**
+    * @api {POST} /api/message/readnew  Mark readed
+    * @apiName Mark readed
+    * @apiGroup Message
+    * @apiParam {String}              message_id      Id of message which was readed.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "message_id": "dfdg9040mdfuhv8vdf7y6fd"
+    *                  }
+    * @apiDescription Notify server and users about readed message. Only non-owners cat read message.
+    */
   def readnew = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
@@ -108,16 +169,23 @@ class MessageController @Inject()(
       }
       message <- messageService.findById(new ObjectId(id))
     } yield {
-      if (message.from != user.id && chat.userIds.contains(user.id)) {
-        messageService.read(oid)(chat).collect {
-          case _ => Ok
-        }.getOrElse(BadRequest)
-      } else {
-        Forbidden
-      }
+      if (message.from != user.id && chat.userIds.contains(user.id)) messageService.read(oid)(chat).collect {
+        case _ => Ok
+      }.getOrElse(BadRequest) else Forbidden
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/message/deliverynew  Mark delivered
+    * @apiName Mark delivered
+    * @apiGroup Message
+    * @apiParam {String}              message_id      Id of message which was readed.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "message_id": "dfdg9040mdfuhv8vdf7y6fd"
+    *                  }
+    * @apiDescription Notify server and users about delivered message. Only non-owners cat deliver message.
+    */
   def deliverynew = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
@@ -130,16 +198,25 @@ class MessageController @Inject()(
       }
       message <- messageService.findById(new ObjectId(id))
     } yield {
-      if (message.from != user.id && chat.userIds.contains(user.id)) {
-        messageService.delivery(oid)(chat).collect {
-          case _ => Ok
-        }.getOrElse(BadRequest)
-      } else {
-        Forbidden
-      }
+      if (message.from != user.id && chat.userIds.contains(user.id)) messageService.delivery(oid)(chat).collect {
+        case _ => Ok
+      }.getOrElse(BadRequest) else Forbidden
     }).getOrElse(BadRequest)
   }
 
+  /**
+    * @api {POST} /api/message/change  Change message
+    * @apiName Change message
+    * @apiGroup Message
+    * @apiParam {String}              id       Id of message which changing.
+    * @apiParam {String}              message  New text of message.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "message": "haha, i change this message",
+    *                  "id":"998sdfdfndfdsfd7fsdf"
+    *                  }
+    * @apiDescription Change message text. Only message owner (sender) can change message.
+    */
   def change = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user
@@ -158,6 +235,20 @@ class MessageController @Inject()(
     }).getOrElse(BadRequest)
   }
 
+
+  /**
+    * @api {POST} /api/message/delete  Delete message
+    * @apiName Delete message
+    * @apiGroup Message
+    * @apiParam {String}              id       Id of message which deleting.
+    * @apiParam {Int}                 mode     (0 | 1 )Where 0 is soft delete, 1 - hard.
+    * @apiParamExample {json} Request-body:
+    *                  {
+    *                  "mode": "0",
+    *                  "id":"998sdfdfndfdsfd7fsdf"
+    *                  }
+    * @apiDescription Delete message. Only sender can delete message.
+    */
   def delete = authUtils.authenticateAction(parse.json) { request =>
     val json = request.body
     val user = request.user

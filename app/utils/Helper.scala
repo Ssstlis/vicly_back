@@ -8,7 +8,6 @@ import pdi.jwt.JwtJson
 import play.api.libs.json.Json
 import services.ConfigService
 
-//Helper must help with buildbot triggering_test 
 object Helper {
 
   implicit class DateTimeExtended(dt: DateTime) {
@@ -16,6 +15,16 @@ object Helper {
       (dt.getMillis / 1000).toInt
     }
   }
+
+//  implicit class BooleanConversion(value:Boolean){
+//    def Boolean2Result() = {
+//      if (value) {
+//        Ok
+//      } else {
+//        BadRequest
+//      }
+//    }
+//  }
 
   implicit class StringExtended(s: String) {
     def md5: String = {
@@ -30,4 +39,5 @@ object Helper {
       JwtJson.decodeJson(s, config.message_key, Seq(config.algo)).toOption
     }
   }
+
 }
