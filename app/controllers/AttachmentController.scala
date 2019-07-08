@@ -30,22 +30,6 @@ class AttachmentController @Inject()(
 
   val path = config.get[String]("path.upload")
 
-  //  def upload(isAvatar: Int) = authUtils.authenticateAction(parse.multipartFormData) { request =>
-  //    val user = request.user
-  //    (for {
-  //      path <- config.getOptional[String]("path.upload")
-  //      groupId = user.groupId
-  //      file <- request.body.file("file")
-  //      if file.ref.toFile.length() <= 3 * (1 << 20)
-  //      uuid = randomUUID().toString
-  //      dirPath = s"$path/$groupId/$uuid"
-  //      tempPath = s"${file.ref.path.toString}"
-  //      if attachmentService.saveFile(tempPath, dirPath, file.filename.replaceAll("\\s", "_"), user.id, file.ref.length())
-  //    } yield {
-  //      if (isAvatar == 1 && file.contentType.exists(_.contains("image"))) userService.setAvatar(user.id, uuid)(groupId)
-  //      Ok(uuid)
-  //    }).getOrElse(BadRequest)
-  //  }
 
   import java.io.IOException
 
@@ -78,6 +62,30 @@ class AttachmentController @Inject()(
     }
   }
 
+
+  /**
+    * @api {POST} /api/attachment/upload  Upload file
+    * @apiName Upload file
+    * @apiGroup Attachment
+    * @apiSuccessExample {json} Success-Response:
+    *                    HTTP/1.1 200 OK
+    *                    {
+    *                    "id":"5d2380dfa7b11b000118eff0",
+    *                    "user_id":1,
+    *                    "filename":"713040.png",
+    *                    "size":2289429,
+    *                    "timestamp":1562607839,
+    *                    "is_avatar":false,
+    *                    "mime":"image/png",
+    *                    "metadata":{
+    *                    "Content-Type":"image/png",
+    *                    "Chroma ColorSpaceType":"RGB",
+    *                    "Compression NumProgressiveScans":"1",
+    *                    "Transparency Alpha":"nonpremultipled"
+    *                    }
+    *                    }
+    * @apiDescription Upload new file as multipart form-data. Return JSON about uploaded attachment.
+    */
   def upload = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
     val user = request.user
 
@@ -92,6 +100,24 @@ class AttachmentController @Inject()(
     })
   }
 
+  /**
+    * @api {POST} /api/attachment/upload_avatar  Upload new avatar
+    * @apiName  Upload new avatar
+    * @apiGroup Attachment
+    * @apiSuccessExample {json} Success-Response:
+    *                    HTTP/1.1 200 OK
+    *                    {
+    *                    "id":"5d2380dfa7b11b000118eff0",
+    *                    "user_id":1,
+    *                    "filename":"713040.png",
+    *                    "size":2289429,
+    *                    "timestamp":1562607839,
+    *                    "is_avatar":false,
+    *                    "mime":"image/png",
+    *                    "metadata":{}
+    *                    }
+    * @apiDescription Upload new avatar. Return JSON about uploaded attachment.
+    */
   def uploadAvatar = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
     val user = request.user
 
@@ -105,6 +131,15 @@ class AttachmentController @Inject()(
     }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in formdata!"))))
   }
 
+
+  /**
+    * @api {POST} /api/attachment/download/:id  Download file
+    * @apiName  Download file
+    * @apiGroup Attachment
+    * @apiParam {Int}             id               Id of attachment.
+    * @apiParam {Int}             [width=None]     Optional width of attachment if file is image.
+    * @apiDescription Download file.
+    */
   def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async { request =>
 
     attachmentService.getFile(id, width).map { fileFuture =>
@@ -122,6 +157,14 @@ class AttachmentController @Inject()(
     })
   }
 
+  /**
+    * @api {POST} /api/attachment/download_avatar/:user_id  Download user avatar
+    * @apiName  Download user avatar
+    * @apiGroup Attachment
+    * @apiParam {Int}             user_id               Id of user.
+    * @apiParam {Int}             [width=None]          Optional width of attachment if file is image.
+    * @apiDescription Download user avatar.
+    */
   def downloadAvatar(userId: Int, width: Option[Int]) = authUtils.authenticateAction.async { request =>
     (for {
       user <- EitherT.fromOption[Future](userService.findOne(userId), "Can't find user")
@@ -132,28 +175,61 @@ class AttachmentController @Inject()(
     }).valueOr(err => BadRequest(Json.obj("error" -> err)))
   }
 
+  /**
+    * @api {POST} /api/attachment/:id   Get attach info
+    * @apiName  Get attach info
+    * @apiGroup Attachment
+    * @apiParam {Int}             if               Id of attachment.
+    * @apiSuccessExample {json} Success-Response:
+    *                    HTTP/1.1 200 OK
+    *                    {
+    *                    "id":"5d2380dfa7b11b000118eff0",
+    *                    "user_id":1,
+    *                    "filename":"713040.png",
+    *                    "size":2289429,
+    *                    "timestamp":1562607839,
+    *                    "is_avatar":false,
+    *                    "mime":"image/png",
+    *                    "metadata":{}
+    *                    }
+    * @apiDescription Download user avatar.
+    */
   def getAttachment(id: String) = authUtils.authenticateAction { request =>
     Ok(Json.toJson(attachmentService.findById(id)))
   }
 
+  /**
+    * @api {POST} /api/attachment/list   Get all attachment info
+    * @apiName  Get all attachment info
+    * @apiGroup Attachment
+    * @apiSuccessExample {json} Success-Response:
+    *                    HTTP/1.1 200 OK
+    *                    [{
+    *                    "id":"5d2380dfa7b11b000118eff0",
+    *                    "user_id":1,
+    *                    "filename":"713040.png",
+    *                    "size":2289429,
+    *                    "timestamp":1562607839,
+    *                    "is_avatar":false,
+    *                    "mime":"image/png",
+    *                    "metadata":{}
+    *                    },
+    *                    {
+    *                    "id":"5d2380dfa7b11b000118eff1",
+    *                    "user_id":1,
+    *                    "filename":"71305465445645640.png",
+    *                    "size":2289429,
+    *                    "timestamp":1562607839,
+    *                    "is_avatar":false,
+    *                    "mime":"image/jpg",
+    *                    "metadata":{}
+    *                    }]
+    * @apiDescription Download user avatar.
+    */
   def list = authUtils.authenticateAction { request =>
     val user = request.user
     Ok(Json.toJson(attachmentService.findByUserId(user.id)))
   }
-
-  // TODO
-  //  def listById = authUtils.authenticateAction { request =>
-  //    val user = request.user
-  //    val json = request.body
-  //
-  //    for (
-  //    attachments <- (json \ "attachments").asOpt[List[ObjectId]]
-  //      atta
-  //    <- attachmentService
-  //    .
-  //    )
-  //    Ok(Json.toJson(attachmentService.findByUserId(user.id)))
-  //  }
 
   //    def remove(id: String) = authUtils.authenticateAction { request =>
   //      val user = request.user
