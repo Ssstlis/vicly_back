@@ -49,6 +49,7 @@ class AttachmentService @Inject()(
       .withRequestTimeout(30.seconds)
       .post(Source(filePart :: dataPart :: Nil))
       .map { response =>
+        println(response.body)
         response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
           attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar, metadata, mime)
         }
