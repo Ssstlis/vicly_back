@@ -37,7 +37,7 @@ class AttachmentService @Inject()(
 
   val isImageType: String => Boolean = (contentType: String) => contentType.startsWith("image/")
 
-  val isBadCode: Int => Boolean = (statusCode: Int) => 200 < statusCode || statusCode >= 300
+  val isBadCode = (statusCode: Int) => 200 > statusCode || statusCode >= 300
 
   val seaweedfs_volume_url: String = config.get[String]("seaweed.address.volume")
   val seaweedfs_master_url: String = config.get[String]("seaweed.address.master")
@@ -100,8 +100,8 @@ class AttachmentService @Inject()(
     val small = image.scaleToWidth(480, ScaleMethod.FastScale).stream(writer)
     val big = image.scaleToWidth(1280, ScaleMethod.FastScale).stream(writer)
 
-    val bigFilePart = MultipartFormData.FilePart("file", originalFilename, None, StreamConverters.fromInputStream(() => small))
-    val smallFilePart = MultipartFormData.FilePart("file", originalFilename, None, StreamConverters.fromInputStream(() => big))
+    val bigFilePart = MultipartFormData.FilePart("file", originalFilename, None, StreamConverters.fromInputStream(() => big))
+    val smallFilePart = MultipartFormData.FilePart("file", originalFilename, None, StreamConverters.fromInputStream(() => small))
 
     Future.sequence(
       Seq(
@@ -126,40 +126,43 @@ class AttachmentService @Inject()(
           ).toList
           attachmentDao.saveFile(swResponses.head.fileId, swResponses.head.fileName, user.id, swResponses.head.fileSize, false, metadata._1, metadata._2)
             .flatMap(attachment =>
-              if (attachmentDao.updateMetaAndPreview(attachment, metadata._1, previewAttachs.get(0).get._id, previewAttachs.get(0).get._id)) {
-                attachmentDao.find(attachment._id)
-              } else None
+              previewAttachs.get(0).flatMap(bigPreview =>
+                previewAttachs.get(1).flatMap(smallPreview =>
+                  attachmentDao.updateMetaAndPreview(attachment, metadata._1, smallPreview._id, bigPreview._id)
+                )
+              )
+
             )
 
         }
       )
-//    ws.url(seaweedfs_volume_url + "/submit")
-//      .withRequestTimeout(30.seconds)
-//      .post(Source(filePart :: dataPart :: Nil))
-//      .map { response =>
-//        println(response.body)
-//        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-//          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
-//        }
-//      }
-//      .recover { case ex =>
-//        Logger("application").error(ex.getLocalizedMessage, ex)
-//        None
-//      }
-//
-//    ws.url(seaweedfs_volume_url + "/submit")
-//      .withRequestTimeout(30.seconds)
-//      .post(Source(filePart :: dataPart :: Nil))
-//      .map { response =>
-//        println(response.body)
-//        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-//          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
-//        }
-//      }
-//      .recover { case ex =>
-//        Logger("application").error(ex.getLocalizedMessage, ex)
-//        None
-//      }
+    //    ws.url(seaweedfs_volume_url + "/submit")
+    //      .withRequestTimeout(30.seconds)
+    //      .post(Source(filePart :: dataPart :: Nil))
+    //      .map { response =>
+    //        println(response.body)
+    //        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
+    //          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
+    //        }
+    //      }
+    //      .recover { case ex =>
+    //        Logger("application").error(ex.getLocalizedMessage, ex)
+    //        None
+    //      }
+    //
+    //    ws.url(seaweedfs_volume_url + "/submit")
+    //      .withRequestTimeout(30.seconds)
+    //      .post(Source(filePart :: dataPart :: Nil))
+    //      .map { response =>
+    //        println(response.body)
+    //        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
+    //          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
+    //        }
+    //      }
+    //      .recover { case ex =>
+    //        Logger("application").error(ex.getLocalizedMessage, ex)
+    //        None
+    //      }
   }
 
   def saveNewFileOther(file: File, originalFilename: String, fileSize: Long, metadata: (Map[String, String], String))(implicit user: User) = {
