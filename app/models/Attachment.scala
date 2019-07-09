@@ -14,9 +14,9 @@ case class Attachment(
   @Key("is_avatar") isAvatar: Boolean,
   metadata: Map[String, String] = Map("fulfilled" -> "false"),
   mime: String,
-  timestamp
-
-  : Int = (System.currentTimeMillis() / 1000).toInt
+  timestamp: Int = (System.currentTimeMillis() / 1000).toInt,
+  previewSmall: Option[ObjectId] = None,
+  previewBig: Option[ObjectId] = None,
 )
 
 trait AttachmentJson {
