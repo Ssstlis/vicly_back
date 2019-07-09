@@ -34,13 +34,16 @@ class AttachmentDao @Inject()(
   }
 
   def updateMetaAndPreview(attachment: Attachment, metadata: Map[String, String], previewSmall: ObjectId, previewBig: ObjectId) = {
-    dao.update(MongoDBObject(
+    if(dao.update(MongoDBObject(
       "_id" -> attachment._id
     ), MongoDBObject(
-      "metadata" -> metadata,
-      "previewSmall" -> previewSmall,
-      "previewBig" -> previewBig
-    )).isUpdateOfExisting
+      "$set" -> MongoDBObject(
+        "metadata" -> metadata,
+        "previewSmall" -> previewSmall,
+        "previewBig" -> previewBig
+      ))).isUpdateOfExisting){
+      dao.findOneById(attachment._id)
+    } else None
   }
 
   def find(id: String) = {

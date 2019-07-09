@@ -29,7 +29,9 @@ trait AttachmentJson {
       "timestamp" -> a.timestamp,
       "is_avatar" -> a.isAvatar,
       "mime" -> a.mime,
-      "metadata" -> a.metadata
+      "metadata" -> a.metadata,
+      "previewSmall" -> a.previewSmall,
+      "previewBig" -> a.previewBig
     )
   }
 }
