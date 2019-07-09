@@ -26,11 +26,21 @@ class AttachmentDao @Inject()(
   //    }.exists(_.wasAcknowledged)
   //  }
 
-  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String) = {
-    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, metadata, mime))
+  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String, previewSmall: Option[ObjectId] = None, previewBig: Option[ObjectId] = None) = {
+    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, metadata, mime, previewSmall = previewSmall, previewBig = previewBig))
     result.flatMap { objectId =>
       dao.findOneById(objectId)
     }
+  }
+
+  def updateMetaAndPreview(attachment: Attachment, metadata: Map[String, String], previewSmall: ObjectId, previewBig: ObjectId) = {
+    dao.update(MongoDBObject(
+      "_id" -> attachment._id
+    ), MongoDBObject(
+      "metadata" -> metadata,
+      "previewSmall" -> previewSmall,
+      "previewBig" -> previewBig
+    )).isUpdateOfExisting
   }
 
   def find(id: String) = {
@@ -40,6 +50,12 @@ class AttachmentDao @Inject()(
     } catch {
       case _: IllegalArgumentException => None
     }
+  }
+
+  def find(id: ObjectId) = {
+    dao.findOne(MongoDBObject(
+      "_id" -> id
+    ))
   }
 
   def findById(id: String) = {
@@ -54,14 +70,9 @@ class AttachmentDao @Inject()(
     )).toList
   }
 
-  //  def remove(userId: Int, uuid: String, path: String): Option[Boolean] = {
-  //    for {
-  //      attachment <- findByUserId(uuid, userId)
-  //      filename <- Try(filename(path)).toOption
-  //    } yield {
-  //      rm(s"$path/$filename") == 0 &&
-  //        rm(path) == 0 &&
-  //        remove(attachment).isUpdateOfExisting
-  //    }
-  //  }
+  def remove(id: String): Boolean = {
+    dao.remove(MongoDBObject(
+      "_id" -> id
+    )).wasAcknowledged()
+  }
 }

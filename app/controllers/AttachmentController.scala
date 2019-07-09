@@ -3,8 +3,6 @@ package controllers
 import java.io.{File, FileInputStream}
 
 import actions.AuthUtils
-import akka.protobuf.ByteString
-import akka.stream.scaladsl.Source
 import cats.data._
 import cats.implicits._
 import com.google.inject.{Inject, Singleton}
@@ -14,7 +12,7 @@ import org.xml.sax.SAXException
 import play.api.Configuration
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
-import play.api.mvc.{InjectedController, ResponseHeader, Result}
+import play.api.mvc.InjectedController
 import services.{AttachmentService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,45 +20,13 @@ import scala.language.postfixOps
 
 @Singleton
 class AttachmentController @Inject()(
-                                      attachmentService: AttachmentService,
-                                      authUtils: AuthUtils,
-                                      config: Configuration,
-                                      userService: UserService
-                                    )(implicit ec: ExecutionContext) extends InjectedController {
+  attachmentService: AttachmentService,
+  authUtils: AuthUtils,
+  config: Configuration,
+  userService: UserService
+)(implicit ec: ExecutionContext) extends InjectedController {
 
   val path = config.get[String]("path.upload")
-
-
-  import java.io.IOException
-
-  import org.apache.tika.exception.TikaException
-  import org.apache.tika.parser.AutoDetectParser
-  import org.apache.tika.sax.BodyContentHandler
-
-  //TODO Replace code!
-  @throws[IOException]
-  @throws[SAXException]
-  @throws[TikaException]
-  def parseExample(file: File): Tuple2[Map[String, String], String] = {
-    val parser = new AutoDetectParser
-    val handler = new BodyContentHandler
-    val metadata = new Metadata
-
-    val tika = new Tika
-    try {
-      val stream = new FileInputStream(file)
-      try {
-        parser.parse(stream, handler, metadata)
-        val mimeType = tika.detect(file)
-        ((for (key <- metadata.names()) yield (key, metadata.get(key))).toMap, mimeType)
-      } finally if (stream != null) stream.close()
-    } catch {
-      case err: Throwable => {
-        println(err.toString)
-        (Map("fulfilled" -> "error"), "application/octet-stream")
-      }
-    }
-  }
 
 
   /**
@@ -87,11 +53,10 @@ class AttachmentController @Inject()(
     * @apiDescription Upload new file as multipart form-data. Return JSON about uploaded attachment.
     */
   def upload = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
-    val user = request.user
+    implicit val user = request.user
 
     request.body.file("file").map { file =>
-      val (metadata, mime) = parseExample(file.ref.toFile)
-      attachmentService.saveFileNew(file.ref.toFile, file.filename, user.id, isAvatar = false, metadata, mime)
+      attachmentService.uploadNewFile(file.ref.toFile, file.filename, file.fileSize)
         .map { response =>
           Ok(Json.toJson(response))
         }
@@ -102,7 +67,7 @@ class AttachmentController @Inject()(
 
   /**
     * @api {POST} /api/attachment/upload_avatar  Upload new avatar
-    * @apiName  Upload new avatar
+    * @apiName Upload new avatar
     * @apiGroup Attachment
     * @apiSuccessExample {json} Success-Response:
     *                    HTTP/1.1 200 OK
@@ -131,10 +96,9 @@ class AttachmentController @Inject()(
     }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in formdata!"))))
   }
 
-
   /**
     * @api {POST} /api/attachment/download/:id  Download file
-    * @apiName  Download file
+    * @apiName Download file
     * @apiGroup Attachment
     * @apiParam {Int}             id               Id of attachment.
     * @apiParam {Int}             [width=None]     Optional width of attachment if file is image.
@@ -144,9 +108,9 @@ class AttachmentController @Inject()(
 
     attachmentService.getFile(id, width).map { fileFuture =>
       fileFuture.map { optStream =>
-        optStream.map { case (source, size:Option[Long], mime) =>
+        optStream.map { case (source, size: Option[Long], mime) =>
           size match {
-            case Some(size) => Ok.streamed(source, Some(size), Some(mime))
+            case s => Ok.streamed(source, s, Some(mime))
             case None => Ok.chunked(source).as(mime)
           }
 
@@ -159,7 +123,7 @@ class AttachmentController @Inject()(
 
   /**
     * @api {POST} /api/attachment/download_avatar/:user_id  Download user avatar
-    * @apiName  Download user avatar
+    * @apiName Download user avatar
     * @apiGroup Attachment
     * @apiParam {Int}             user_id               Id of user.
     * @apiParam {Int}             [width=None]          Optional width of attachment if file is image.
@@ -177,7 +141,7 @@ class AttachmentController @Inject()(
 
   /**
     * @api {POST} /api/attachment/:id   Get attach info
-    * @apiName  Get attach info
+    * @apiName Get attach info
     * @apiGroup Attachment
     * @apiParam {Int}             if               Id of attachment.
     * @apiSuccessExample {json} Success-Response:
@@ -194,13 +158,13 @@ class AttachmentController @Inject()(
     *                    }
     * @apiDescription Download user avatar.
     */
-  def getAttachment(id: String) = authUtils.authenticateAction { request =>
+  def getAttachment(id: String) = authUtils.authenticateAction { _ =>
     Ok(Json.toJson(attachmentService.findById(id)))
   }
 
   /**
     * @api {POST} /api/attachment/list   Get all attachment info
-    * @apiName  Get all attachment info
+    * @apiName Get all attachment info
     * @apiGroup Attachment
     * @apiSuccessExample {json} Success-Response:
     *                    HTTP/1.1 200 OK
@@ -231,13 +195,10 @@ class AttachmentController @Inject()(
     Ok(Json.toJson(attachmentService.findByUserId(user.id)))
   }
 
-  //    def remove(id: String) = authUtils.authenticateAction { request =>
-  //      val user = request.user
-  //      (for {
-  //        groupId <- user.groupId
-  //        _ <- attachmentService.remove(user.id, uuid, s"$path/$groupId/$uuid")
-  //      } yield {
-  //        Ok
-  //      }).getOrElse(BadRequest)
-  //    }
+  def remove(id: String) = authUtils.authenticateAction { _ =>
+    attachmentService.remove(id) match {
+      case true => Ok
+      case _ => BadRequest
+    }
+  }
 }
