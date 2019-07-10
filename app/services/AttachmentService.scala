@@ -116,53 +116,18 @@ class AttachmentService @Inject()(
             successResponse.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
               Some(deleteSeaweed(seaweedResponse.fileId))
             })
-          None
+          Left("Error")
         } else {
-          val swResponses = result.flatMap(response =>
-            response.json.asOpt(SeaweedResponse.reads())
-          )
-          val previewAttachs = swResponses.tail.flatMap(sw =>
-            attachmentDao.saveFile(sw.fileId, sw.fileName, user.id, sw.fileSize, false, Map.empty, metadata._2)
-          ).toList
-          attachmentDao.saveFile(swResponses.head.fileId, swResponses.head.fileName, user.id, swResponses.head.fileSize, false, metadata._1, metadata._2)
-            .flatMap(attachment =>
-              previewAttachs.get(0).flatMap(bigPreview =>
-                previewAttachs.get(1).flatMap(smallPreview =>
-                  attachmentDao.updateMetaAndPreview(attachment, metadata._1, smallPreview._id, bigPreview._id)
-                )
-              )
-
-            )
-
+          val swResponses = result
+            .flatMap(response => response.json.asOpt(SeaweedResponse.reads()))
+            .flatMap(sw => attachmentDao.saveFile(sw.fileId, sw.fileName, user.id, sw.fileSize, false, Map.empty, metadata._2))
+            .toList
+          swResponses.get(1).flatMap(bigPreview =>
+            swResponses.get(2).flatMap(smallPreview =>
+              attachmentDao.updateMetaAndPreview(swResponses.head, metadata._1, smallPreview._id, bigPreview._id)))
+            .toRight("Some error!")
         }
       )
-    //    ws.url(seaweedfs_volume_url + "/submit")
-    //      .withRequestTimeout(30.seconds)
-    //      .post(Source(filePart :: dataPart :: Nil))
-    //      .map { response =>
-    //        println(response.body)
-    //        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-    //          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
-    //        }
-    //      }
-    //      .recover { case ex =>
-    //        Logger("application").error(ex.getLocalizedMessage, ex)
-    //        None
-    //      }
-    //
-    //    ws.url(seaweedfs_volume_url + "/submit")
-    //      .withRequestTimeout(30.seconds)
-    //      .post(Source(filePart :: dataPart :: Nil))
-    //      .map { response =>
-    //        println(response.body)
-    //        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-    //          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
-    //        }
-    //      }
-    //      .recover { case ex =>
-    //        Logger("application").error(ex.getLocalizedMessage, ex)
-    //        None
-    //      }
   }
 
   def saveNewFileOther(file: File, originalFilename: String, fileSize: Long, metadata: (Map[String, String], String))(implicit user: User) = {
@@ -176,11 +141,13 @@ class AttachmentService @Inject()(
         println(response.body)
         response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
           attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, user.id, seaweedResponse.fileSize, false, metadata._1, metadata._2)
+        }.toRight {
+          "Error while save in MongoDB"
         }
       }
       .recover { case ex =>
         Logger("application").error(ex.getLocalizedMessage, ex)
-        None
+        Left(ex.getLocalizedMessage)
       }
   }
 
