@@ -12,7 +12,10 @@ val vicly_backend = project
       "com.sksamuel.scrimage" %% "scrimage-filters" % "2.1.8",
       "org.apache.tika" % "tika-core" % "1.20",
       "org.apache.tika" % "tika-parsers" % "1.20",
-      "jakarta.ws.rs" % "jakarta.ws.rs-api" % "2.1.4"
+      "jakarta.ws.rs" % "jakarta.ws.rs-api" % "2.1.4",
+      "org.bytedeco" % "javacv-platform" % "1.5.1",
+      "org.bytedeco" % "javacpp-presets" % "1.5.1",
+      "org.bytedeco" % "ffmpeg-platform" % "4.1.3-1.5.1"
     ).map(_ exclude("javax.ws.rs", "javax.ws.rs-api")),
     name := "backend",
     version := "0.1",

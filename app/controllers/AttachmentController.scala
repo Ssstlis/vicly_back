@@ -1,14 +1,9 @@
 package controllers
 
-import java.io.{File, FileInputStream}
-
 import actions.AuthUtils
 import cats.data._
 import cats.implicits._
 import com.google.inject.{Inject, Singleton}
-import org.apache.tika.Tika
-import org.apache.tika.metadata._
-import org.xml.sax.SAXException
 import play.api.Configuration
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
@@ -27,7 +22,6 @@ class AttachmentController @Inject()(
 )(implicit ec: ExecutionContext) extends InjectedController {
 
   val path = config.get[String]("path.upload")
-
 
   /**
     * @api {POST} /api/attachment/upload  Upload file
@@ -57,8 +51,9 @@ class AttachmentController @Inject()(
 
     request.body.file("file").map { file =>
       attachmentService.uploadNewFile(file.ref.toFile, file.filename, file.fileSize)
-        .map { response =>
-          Ok(Json.toJson(response))
+        .map {
+          case Right(attachment) => Ok(Json.toJson(attachment))
+          case Left(error) => BadRequest(Json.obj("error" -> error))
         }
     }.getOrElse(Future {
       NotFound
@@ -83,17 +78,19 @@ class AttachmentController @Inject()(
     *                    }
     * @apiDescription Upload new avatar. Return JSON about uploaded attachment.
     */
-  def uploadAvatar = authUtils.authenticateAction.async(parse.multipartFormData) { request =>
-    val user = request.user
+  def uploadAvatar = authUtils.authenticateAction.async(parse.multipartFormData) {
+    request =>
+      val user = request.user
 
-    //TODO Remove old avatar !!!
-    request.body.file("file").map { file =>
-      attachmentService.saveFileAvatarNew(user, file.ref.toFile, file.filename, user.id)
-        .map {
-          case Left(ex) => BadRequest(Json.obj("error" -> ex.getLocalizedMessage))
-          case Right(attachment) => Ok(Json.toJson(attachment))
-        }
-    }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in formdata!"))))
+      //TODO Remove old avatar !!!
+      request.body.file("file").map {
+        file =>
+          attachmentService.saveFileAvatarNew(user, file.ref.toFile, file.filename, user.id)
+            .map {
+              case Left(ex) => BadRequest(Json.obj("error" -> ex.getLocalizedMessage))
+              case Right(attachment) => Ok(Json.toJson(attachment))
+            }
+      }.getOrElse(Future.successful(NotFound(Json.obj("error" -> "There is no file in formdata!"))))
   }
 
   /**
@@ -104,21 +101,25 @@ class AttachmentController @Inject()(
     * @apiParam {Int}             [width=None]     Optional width of attachment if file is image.
     * @apiDescription Download file.
     */
-  def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async { request =>
+  def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async {
+    request =>
 
-    attachmentService.getFile(id, width).map { fileFuture =>
-      fileFuture.map { optStream =>
-        optStream.map { case (source, size: Option[Long], mime) =>
-          size match {
-            case s => Ok.streamed(source, s, Some(mime))
-            case None => Ok.chunked(source).as(mime)
+      attachmentService.getFile(id, width).map {
+        fileFuture =>
+          fileFuture.map {
+            optStream =>
+              optStream.map {
+                case (source, size: Option[Long], mime) =>
+                  size match {
+                    case s => Ok.streamed(source, s, Some(mime))
+                    case None => Ok.chunked(source).as(mime)
+                  }
+
+              }.getOrElse(Gone)
           }
-
-        }.getOrElse(Gone)
-      }
-    }.getOrElse(Future {
-      NotFound
-    })
+      }.getOrElse(Future {
+        NotFound
+      })
   }
 
   /**
@@ -129,14 +130,15 @@ class AttachmentController @Inject()(
     * @apiParam {Int}             [width=None]          Optional width of attachment if file is image.
     * @apiDescription Download user avatar.
     */
-  def downloadAvatar(userId: Int, width: Option[Int]) = authUtils.authenticateAction.async { request =>
-    (for {
-      user <- EitherT.fromOption[Future](userService.findOne(userId), "Can't find user")
-      avatar <- EitherT.fromOption[Future](user.avatar, "No avatar specified for user")
-      stream <- attachmentService.getFileAvatar(avatar, width)
-    } yield {
-      Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
-    }).valueOr(err => BadRequest(Json.obj("error" -> err)))
+  def downloadAvatar(userId: Int, width: Option[Int]) = authUtils.authenticateAction.async {
+    request =>
+      (for {
+        user <- EitherT.fromOption[Future](userService.findOne(userId), "Can't find user")
+        avatar <- EitherT.fromOption[Future](user.avatar, "No avatar specified for user")
+        stream <- attachmentService.getFileAvatar(avatar, width)
+      } yield {
+        Ok.sendEntity(HttpEntity.Streamed(stream, None, None))
+      }).valueOr(err => BadRequest(Json.obj("error" -> err)))
   }
 
   /**
@@ -158,8 +160,9 @@ class AttachmentController @Inject()(
     *                    }
     * @apiDescription Download user avatar.
     */
-  def getAttachment(id: String) = authUtils.authenticateAction { _ =>
-    Ok(Json.toJson(attachmentService.findById(id)))
+  def getAttachment(id: String) = authUtils.authenticateAction {
+    _ =>
+      Ok(Json.toJson(attachmentService.findById(id)))
   }
 
   /**
@@ -190,15 +193,17 @@ class AttachmentController @Inject()(
     *                    }]
     * @apiDescription Download user avatar.
     */
-  def list = authUtils.authenticateAction { request =>
-    val user = request.user
-    Ok(Json.toJson(attachmentService.findByUserId(user.id)))
+  def list = authUtils.authenticateAction {
+    request =>
+      val user = request.user
+      Ok(Json.toJson(attachmentService.findByUserId(user.id)))
   }
 
-  def remove(id: String) = authUtils.authenticateAction { _ =>
-    attachmentService.remove(id) match {
-      case true => Ok
-      case _ => BadRequest
-    }
+  def remove(id: String) = authUtils.authenticateAction {
+    _ =>
+      attachmentService.remove(id) match {
+        case true => Ok
+        case _ => BadRequest
+      }
   }
 }
