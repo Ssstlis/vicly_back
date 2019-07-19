@@ -22,6 +22,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.MultipartFormData
 import play.api.mvc.MultipartFormData._
 import play.api.{Configuration, Logger}
+import utils.JavaCVUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -88,6 +89,7 @@ class AttachmentService @Inject()(
 
     metadata._2 match {
       case rImage(_) => saveNewFileImage(file, originalFilename, fileSize, metadata)
+      case rVideo(_) => saveNewFileVideo(file, originalFilename, fileSize, metadata)
       case _ => saveNewFileOther(file, originalFilename, fileSize, metadata)
     }
   }
@@ -125,6 +127,56 @@ class AttachmentService @Inject()(
           swResponses.get(1).flatMap(bigPreview =>
             swResponses.get(2).flatMap(smallPreview =>
               attachmentDao.updateMetaAndPreview(swResponses.head, metadata._1, smallPreview._id, bigPreview._id)))
+            .toRight("Some error!")
+        }
+      )
+  }
+
+  def saveNewFileVideo(file: File, originalFilename: String, fileSize: Long, metadata: (Map[String, String], String))(implicit user: User) = {
+    val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
+    val dataPart = DataPart("key", "value")
+
+    val (image, video) = JavaCVUtils.createVideoPreview(file)
+
+    val previewImageName = originalFilename + "_preview.jpg"
+    val previewVideoName = originalFilename + "_preview.wepm"
+    val cntTypeVideo = "video/webm"
+    val cntTypeImage = "image/jpg"
+
+    val imagePreviewFilePart = MultipartFormData.FilePart("file", previewImageName, None, StreamConverters.fromInputStream(() => image))
+    val videoPreviewFilePart = MultipartFormData.FilePart("file", previewVideoName, None, StreamConverters.fromInputStream(() => video))
+
+    Future.sequence(
+      Seq(
+        postSeaweed(Source(filePart :: dataPart :: Nil)),
+        postSeaweed(Source(imagePreviewFilePart :: dataPart :: Nil)),
+        postSeaweed(Source(videoPreviewFilePart :: dataPart :: Nil))
+      )
+    )
+      .map(result =>
+        if (result.exists(response => isBadCode(response.status))) {
+          result.filter(response => !isBadCode(response.status)).map(successResponse =>
+            successResponse.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
+              Some(deleteSeaweed(seaweedResponse.fileId))
+            })
+          Left("Error")
+        } else {
+
+          val swResponses = result
+            .flatMap(response => response.json.asOpt(SeaweedResponse.reads()))
+            .zipWithIndex
+            .flatMap { case (sw: SeaweedResponse, i: Int) => {
+              val contentType = i match {
+                case 0 => metadata._2
+                case 1 => cntTypeImage
+                case 2 => cntTypeVideo
+              }
+              attachmentDao.saveFile(sw.fileId, sw.fileName, user.id, sw.fileSize, false, Map.empty, contentType)
+            }}
+            .toList
+          swResponses.get(1).flatMap(imagePreview =>
+            swResponses.get(2).flatMap(videoPreview =>
+              attachmentDao.updateMetaAndPreview(swResponses.head, metadata._1, imagePreview._id, videoPreview._id)))
             .toRight("Some error!")
         }
       )
