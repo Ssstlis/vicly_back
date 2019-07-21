@@ -10,7 +10,7 @@ import com.google.inject.{Inject, Singleton}
 import com.sksamuel.scrimage.nio.JpegWriter
 import com.sksamuel.scrimage.{Image, ScaleMethod}
 import daos.AttachmentDao
-import models.{SeaweedResponse, User}
+import models.{Attachment, SeaweedResponse, User}
 import org.apache.tika.Tika
 import org.apache.tika.exception.TikaException
 import org.apache.tika.metadata.Metadata
@@ -122,11 +122,12 @@ class AttachmentService @Inject()(
         } else {
           val swResponses = result
             .flatMap(response => response.json.asOpt(SeaweedResponse.reads()))
-            .flatMap(sw => attachmentDao.saveFile(sw.fileId, sw.fileName, user.id, sw.fileSize, false, Map.empty, metadata._2))
+            .map(sw => new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, metadata._2))
             .toList
-          swResponses.get(1).flatMap(bigPreview =>
-            swResponses.get(2).flatMap(smallPreview =>
-              attachmentDao.updateMetaAndPreview(swResponses.head, metadata._1, smallPreview._id, bigPreview._id)))
+          swResponses.get(1).flatMap(bigPreviewAttach =>
+            swResponses.get(2).flatMap(smallPreviewAttach =>
+              attachmentDao.saveAttachment(swResponses.head.copy(metadata = metadata._1, previewSmall = Some(smallPreviewAttach), previewBig = Some(bigPreviewAttach)))
+            ))
             .toRight("Some error!")
         }
       )
@@ -165,18 +166,18 @@ class AttachmentService @Inject()(
           val swResponses = result
             .flatMap(response => response.json.asOpt(SeaweedResponse.reads()))
             .zipWithIndex
-            .flatMap { case (sw: SeaweedResponse, i: Int) => {
+            .map { case (sw: SeaweedResponse, i: Int) => {
               val contentType = i match {
                 case 0 => metadata._2
                 case 1 => cntTypeImage
                 case 2 => cntTypeVideo
               }
-              attachmentDao.saveFile(sw.fileId, sw.fileName, user.id, sw.fileSize, false, Map.empty, contentType)
+              new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, contentType)
             }}
             .toList
           swResponses.get(1).flatMap(imagePreview =>
             swResponses.get(2).flatMap(videoPreview =>
-              attachmentDao.updateMetaAndPreview(swResponses.head, metadata._1, imagePreview._id, videoPreview._id)))
+              attachmentDao.saveAttachment(swResponses.head.copy(metadata = metadata._1, previewSmall = Some(imagePreview), previewBig = Some(videoPreview)))))
             .toRight("Some error!")
         }
       )
