@@ -26,22 +26,29 @@ class AttachmentDao @Inject()(
   //    }.exists(_.wasAcknowledged)
   //  }
 
-  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String, previewSmall: Option[ObjectId] = None, previewBig: Option[ObjectId] = None) = {
-    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, metadata, mime, previewSmall = previewSmall, previewBig = previewBig))
+  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String, previewSmall: Option[Attachment] = None, previewBig: Option[Attachment] = None) = {
+    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, mime,metadata, previewSmall = previewSmall, previewBig = previewBig))
     result.flatMap { objectId =>
       dao.findOneById(objectId)
     }
   }
 
-  def updateMetaAndPreview(attachment: Attachment, metadata: Map[String, String], previewSmall: ObjectId, previewBig: ObjectId) = {
-    if(dao.update(MongoDBObject(
+  def saveAttachment(attachment: Attachment) = {
+    val result = dao.insert(attachment)
+    result.flatMap { objectId =>
+      dao.findOneById(objectId)
+    }
+  }
+
+  def updateMetaAndPreview(attachment: Attachment, metadata: Map[String, String], previewSmall: Option[Attachment], previewBig: Option[Attachment]) = {
+    if (dao.update(MongoDBObject(
       "_id" -> attachment._id
     ), MongoDBObject(
       "$set" -> MongoDBObject(
         "metadata" -> metadata,
         "previewSmall" -> previewSmall,
         "previewBig" -> previewBig
-      ))).isUpdateOfExisting){
+      ))).isUpdateOfExisting) {
       dao.findOneById(attachment._id)
     } else None
   }
