@@ -1,6 +1,7 @@
 package controllers
 
 import actions.AuthUtils
+import akka.stream.scaladsl.Source
 import cats.data._
 import cats.implicits._
 import com.google.inject.{Inject, Singleton}
@@ -98,28 +99,51 @@ class AttachmentController @Inject()(
     * @apiName Download file
     * @apiGroup Attachment
     * @apiParam {Int}             id               Id of attachment.
-    * @apiParam {Int}             [width=None]     Optional width of attachment if file is image.
-    * @apiDescription Download file.
+    * @apiDescription Download file. Use other routes for download media previews
     */
-  def download(id: String, width: Option[Int]) = authUtils.authenticateAction.async {
+  def download(id: String) = authUtils.authenticateAction.async {
     request =>
-
-      attachmentService.getFile(id, width).map {
+      attachmentService.getFile(id).map {
         fileFuture =>
           fileFuture.map {
             optStream =>
               optStream.map {
-                case (source, size: Option[Long], mime) =>
-                  size match {
-                    case s => Ok.streamed(source, s, Some(mime))
-                    case None => Ok.chunked(source).as(mime)
-                  }
-
+                case (source, size: Option[Long], mime) => Ok.streamed(source, size, Some(mime))
               }.getOrElse(Gone)
           }
       }.getOrElse(Future {
         NotFound
       })
+  }
+
+  /**
+    * @api {POST} /api/attachment/download/:id/preview_small  Download small preview for media-file
+    * @apiName Download small preview
+    * @apiGroup Attachment
+    * @apiParam {Int}             id               Id of attachment.
+    * @apiDescription Download small preview for media-file.For image is pic with 200px width and same proportion. For video preview is pic of of video start.(Eng WTF)
+    */
+  def downloadPreviewSmall(id: String) = authUtils.authenticateAction.async {
+    request =>
+      attachmentService.getFilePreviewSmall(id).map {
+        case Right((source, size: Option[Long], mime)) => Ok.streamed(source, size, Some(mime))
+        case Left(err) => Gone(Json.obj("error" -> err))
+      }
+  }
+
+  /**
+    * @api {POST} /api/attachment/download/:id/preview_big  Download big preview for media-file
+    * @apiName Download big preview
+    * @apiGroup Attachment
+    * @apiParam {Int}             id               Id of attachment.
+    * @apiDescription  Download big preview for media-file. For image is HD pic. For video big preview is webm video.
+    */
+  def downloadPreviewBig(id: String) = authUtils.authenticateAction.async {
+    request =>
+      attachmentService.getFilePreviewBig(id).map {
+        case Right((source, size: Option[Long], mime)) => Ok.streamed(source, size, Some(mime))
+        case Left(err) => Gone(Json.obj("error" -> err))
+      }
   }
 
   /**

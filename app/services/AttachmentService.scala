@@ -36,8 +36,6 @@ class AttachmentService @Inject()(
   ws: WSClient
 )(implicit ec: ExecutionContext) {
 
-  val isImageType: String => Boolean = (contentType: String) => contentType.startsWith("image/")
-
   val isBadCode = (statusCode: Int) => 200 > statusCode || statusCode >= 300
 
   val seaweedfs_volume_url: String = config.get[String]("seaweed.address.volume")
@@ -82,6 +80,11 @@ class AttachmentService @Inject()(
   implicit val writer = JpegWriter().withCompression(50).withProgressive(true)
   val rImage = "^image/(.*)".r
   val rVideo = "^video/(.*)".r
+  val isMediaType = (mime: String) => mime match {
+    case rImage(_) => true
+    case rVideo(_) => true
+    case _ => false
+  }
 
   def uploadNewFile(file: File, originalFilename: String, fileSize: Long)(implicit user: User) = {
 
@@ -173,7 +176,8 @@ class AttachmentService @Inject()(
                 case 2 => cntTypeVideo
               }
               new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, contentType)
-            }}
+            }
+            }
             .toList
           swResponses.get(1).flatMap(imagePreview =>
             swResponses.get(2).flatMap(videoPreview =>
@@ -268,30 +272,73 @@ class AttachmentService @Inject()(
   //        None
   //      }
 
-  def getFile(id: String, width: Option[Int]) = {
+  def getFile(id: String) = {
     attachmentDao.find(id)
       .collect {
         case attachment =>
           var url: String = seaweedfs_master_url + "/" + attachment.fid
-          if (isImageType(attachment.mime) && width.isDefined) {
-            url += "?width=" + width.get
-          }
-
+          //          if (isImageType(attachment.mime) && width.isDefined) {
+          //            url += "?width=" + width.get
+          //          }
           ws.url(url)
             .withMethod("GET")
             .stream()
             .map {
               response =>
                 if (response.status < 300 && response.status >= 200) {
-                  val lenght = if (response.header("Content-Length").isDefined) response.header("Content-Length").get.toLong else null
-                  Some((response.bodyAsSource, Option(lenght), attachment.mime))
+                  Some((response.bodyAsSource, if (response.header("Content-Length").isDefined) Some(response.header("Content-Length").get.toLong) else None, attachment.mime))
                 }
                 else {
                   None
                 }
-
             }
       }
+  }
+
+  def getFilePreviewSmall(id: String) = {
+    attachmentDao.find(id)
+      .flatMap { attachment =>
+        attachment.previewSmall.map {
+          case attachment if isMediaType(attachment.mime) =>
+            var url: String = seaweedfs_master_url + "/" + attachment.fid
+            ws.url(url)
+              .withMethod("GET")
+              .stream()
+              .map {
+                response =>
+                  if (response.status < 300 && response.status >= 200) {
+                    Right((response.bodyAsSource, if (response.header("Content-Length").isDefined) Some(response.header("Content-Length").get.toLong) else None, attachment.mime))
+                  }
+                  else {
+                    Left("Attachment with provided id not exist in SeaweedFS")
+                  }
+              }
+          case _ => Future.successful(Left("Attachment with provided id not exist"))
+        }
+      }.getOrElse(Future.successful(Left("Attachment not exist or this attachment isn't meadia file!")))
+  }
+
+  def getFilePreviewBig(id: String) = {
+    attachmentDao.find(id)
+      .flatMap { attachment =>
+        attachment.previewBig.map {
+          case attachment if isMediaType(attachment.mime) =>
+            var url: String = seaweedfs_master_url + "/" + attachment.fid
+            ws.url(url)
+              .withMethod("GET")
+              .stream()
+              .map {
+                response =>
+                  if (response.status < 300 && response.status >= 200) {
+                    Right((response.bodyAsSource, if (response.header("Content-Length").isDefined) Some(response.header("Content-Length").get.toLong) else None, attachment.mime))
+                  }
+                  else {
+                    Left("Attachment with provided id not exist in SeaweedFS")
+                  }
+              }
+          case _ => Future.successful(Left("Attachment with provided id not exist"))
+        }
+      }.getOrElse(Future.successful(Left("Attachment not exist or this attachment isn't meadia file!")))
   }
 
   def getFileAvatar(avatarId: ObjectId, width: Option[Int]) = {

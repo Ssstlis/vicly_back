@@ -23,20 +23,6 @@ case class Attachment(
 )
 
 trait AttachmentJson {
-//  implicit val writes: Writes[Attachment] = (a: Attachment) => {
-//    Json.obj(
-//      "id" -> a._id,
-//      "user_id" -> a.userId,
-//      "filename" -> a.filename,
-//      "size" -> a.size,
-//      "timestamp" -> a.timestamp,
-//      "is_avatar" -> a.isAvatar,
-//      "mime" -> a.mime,
-//      "metadata" -> a.metadata,
-//      "previewSmall" -> writes(a.previewSmall),
-//      "previewBig" -> writes(a.previewBig)
-//    )
-//  }
 
     implicit lazy val writes:Writes[Attachment] = (
       (__ \ "id").write[ObjectId] and
