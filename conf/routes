@@ -22,7 +22,7 @@ POST        /api/group/set_purpose                                   controllers
 #Messages
 POST        /api/message/postnewchat                                 controllers.MessageController.sendMessageInChat
 POST        /api/message/postnewuser                                 controllers.MessageController.postnewuser
-#GET         /api/message/chat/group/unread/:id                  controllers.MessageController.unread(id: Int)
+#GET        /api/message/chat/group/unread/:id                       controllers.MessageController.unread(id: Int)
 GET         /api/message/chat/user/from/:user_id/:message_id         controllers.MessageController.getUserChatMessagesFrom(user_id: Int, message_id:String)
 GET         /api/message/chat/group/from/:chat_id/:message_id        controllers.MessageController.groupChatMessagesFrom(chat_id: Int, message_id:String)
 GET         /api/message/chat/group/:chat_id/:page                   controllers.MessageController.getGroupChatMessages(chat_id: Int, page: Int)
@@ -46,7 +46,9 @@ GET         /ws/:token                                               controllers
 GET         /api/attachment/:id                                      controllers.AttachmentController.getAttachment(id: String)
 POST        /api/attachment/upload                                   controllers.AttachmentController.upload
 POST        /api/attachment/upload_avatar                            controllers.AttachmentController.uploadAvatar
-GET         /api/attachment/download/:id                             controllers.AttachmentController.download(id: String, width: Option[Int])
+GET         /api/attachment/download/:id                             controllers.AttachmentController.download(id: String)
+GET         /api/attachment/download/:id/preview_small               controllers.AttachmentController.downloadPreviewSmall(id: String)
+GET         /api/attachment/download/:id/preview_big                 controllers.AttachmentController.downloadPreviewBig(id: String)
 GET         /api/attachment/download_avatar/:user_id                 controllers.AttachmentController.downloadAvatar(user_id:Int, width: Option[Int])
 GET         /api/attachment/user/list                                controllers.AttachmentController.list
 GET         /api/attachment/list                                     controllers.AttachmentController.list

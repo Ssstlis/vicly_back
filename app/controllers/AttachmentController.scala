@@ -39,11 +39,37 @@ class AttachmentController @Inject()(
     *                    "is_avatar":false,
     *                    "mime":"image/png",
     *                    "metadata":{
-    *                    "Content-Type":"image/png",
-    *                    "Chroma ColorSpaceType":"RGB",
-    *                    "Compression NumProgressiveScans":"1",
-    *                    "Transparency Alpha":"nonpremultipled"
-    *                    }
+    *                       "Content-Type":"image/png",
+    *                       "Chroma ColorSpaceType":"RGB",
+    *                       "Compression NumProgressiveScans":"1",
+    *                       "Transparency Alpha":"nonpremultipled"
+    *                    },
+    *                    "previewSmall": {
+    *                       "id": "5d41ffa84af6f37daebf8154",
+    *                       "fid": "1,5fc6bb9cec",
+    *                       "user_id": 1,
+    *                       "filename": "8K_Ultra_186.jpg",
+    *                       "size": 35182,
+    *                       "is_avatar": false,
+    *                       "mime": "image/jpeg",
+    *                       "metadata": {
+    *                         "fulfilled": "false"
+    *                       },
+    *                       "timestamp": 1564606376
+    *                     },
+    *                     "previewBig": {
+    *                       "id": "5d41ffa84af6f37daebf8153",
+    *                       "fid": "1,5e26c5a421",
+    *                       "user_id": 1,
+    *                       "filename": "8K_Ultra_186.jpg",
+    *                       "size": 224063,
+    *                       "is_avatar": false,
+    *                       "mime": "image/jpeg",
+    *                       "metadata": {
+    *                         "fulfilled": "false"
+    *                       },
+    *                       "timestamp": 1564606376
+    *     }
     *                    }
     * @apiDescription Upload new file as multipart form-data. Return JSON about uploaded attachment.
     */
@@ -95,7 +121,7 @@ class AttachmentController @Inject()(
   }
 
   /**
-    * @api {POST} /api/attachment/download/:id  Download file
+    * @api {GET} /api/attachment/download/:id  Download file
     * @apiName Download file
     * @apiGroup Attachment
     * @apiParam {Int}             id               Id of attachment.
@@ -117,7 +143,7 @@ class AttachmentController @Inject()(
   }
 
   /**
-    * @api {POST} /api/attachment/download/:id/preview_small  Download small preview for media-file
+    * @api {GET} /api/attachment/download/:id/preview_small  Download small preview for media-file
     * @apiName Download small preview
     * @apiGroup Attachment
     * @apiParam {Int}             id               Id of attachment.
@@ -132,11 +158,11 @@ class AttachmentController @Inject()(
   }
 
   /**
-    * @api {POST} /api/attachment/download/:id/preview_big  Download big preview for media-file
+    * @api {GET} /api/attachment/download/:id/preview_big  Download big preview for media-file
     * @apiName Download big preview
     * @apiGroup Attachment
     * @apiParam {Int}             id               Id of attachment.
-    * @apiDescription  Download big preview for media-file. For image is HD pic. For video big preview is webm video.
+    * @apiDescription Download big preview for media-file. For image is HD pic. For video big preview is webm video.
     */
   def downloadPreviewBig(id: String) = authUtils.authenticateAction.async {
     request =>
@@ -166,7 +192,7 @@ class AttachmentController @Inject()(
   }
 
   /**
-    * @api {POST} /api/attachment/:id   Get attach info
+    * @api {GET} /api/attachment/:id   Get attach info
     * @apiName Get attach info
     * @apiGroup Attachment
     * @apiParam {Int}             if               Id of attachment.
@@ -190,7 +216,7 @@ class AttachmentController @Inject()(
   }
 
   /**
-    * @api {POST} /api/attachment/list   Get all attachment info
+    * @api {GET} /api/attachment/list   Get all attachment info
     * @apiName Get all attachment info
     * @apiGroup Attachment
     * @apiSuccessExample {json} Success-Response:
