@@ -10,13 +10,13 @@ import utils.CollectionHelper.TraversableOnceHelper
 
 @Singleton
 class UserService @Inject()(
-                             socketNotificationService: SocketNotificationService,
-                             groupService: GroupService,
-                             chatService: ChatService,
-                             messageService: MessageService,
-                             config: ConfigService,
-                             userDao: UserDao
-                           ) {
+  socketNotificationService: SocketNotificationService,
+  groupService: GroupService,
+  chatService: ChatService,
+  messageService: MessageService,
+  config: ConfigService,
+  userDao: UserDao
+) {
 
   def signup(user: User) = {
     findByLogin(user.login).map { user =>
@@ -50,14 +50,13 @@ class UserService @Inject()(
     val usersWithGroup = users
       .collect { case Right(user) => user }
       .groupBy(_.groupId)
-      .map { case (groupIdO, users) => {
+      .map { case (groupIdO, users) =>
         (for {
           groupId <- groupIdO
           group <- groups.get(groupId)
         } yield {
           Right(group -> users)
         }).getOrElse(Left(users))
-      }
       }
 
     val withoutGroup = usersWithoutGroup ::: usersWithGroup.flatMap {
@@ -67,13 +66,13 @@ class UserService @Inject()(
 
     val withGroups = usersWithGroup.collect {
       case Right((group, users)) =>
-        val usersWithMessages = users.seq.map { user =>
-          val chat = chatService.findUserChat(user.id, user.id)
+        val usersWithMessages = users.seq.map { mUser =>
+          val chat = chatService.findUserChat(mUser.id, user.id)
           val (unread, lastO) = chat.map { chat =>
             messageService.findUnreadMessagesCount(chat.id, user.id) ->
-              messageService.findLastMessage(chat.id)
+            messageService.findLastMessage(chat.id)
           }.getOrElse(0L, None)
-          (user, unread, lastO, chat)
+          (mUser, unread, lastO, chat)
         }
         val groupChatMap = chatService.findGroupChatByGroupId(group.id)
           .filter(chat => chat.userIds.contains(user.id))
