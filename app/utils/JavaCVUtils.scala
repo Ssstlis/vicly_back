@@ -14,7 +14,7 @@ object JavaCVUtils {
     // debug stuff
     FFmpegLogCallback.set()
     av_log_set_level(AV_LOG_DEBUG)
-    var frameGrabber = new FFmpegFrameGrabber(file)
+    val frameGrabber = new FFmpegFrameGrabber(file)
     frameGrabber.start()
     var frame = frameGrabber.grabImage()
     //        CanvasFrame canvasFrame = new CanvasFrame("LOL");
@@ -22,9 +22,11 @@ object JavaCVUtils {
     val FRAME_COUNT_ORIG = frameGrabber.getFrameRate
     val FRAME_COUNT = (FRAME_COUNT_ORIG / 2).toInt
 
-    var aspectRatio: Double = frame.imageWidth / frame.imageHeight.toDouble
-    val height:Int = if (frame.imageWidth > 480) 480 else frame.imageWidth
-    val width:Int = (height * aspectRatio).toInt
+    val originalWidth = frame.imageWidth
+    val originalHeight = frame.imageHeight
+    val aspectRatio: Double = originalWidth / originalHeight.toDouble
+    val height: Int = if (originalWidth > 480) 480 else originalWidth
+    val width: Int = (height * aspectRatio).toInt
 
     val bufOutputVideo = new ByteArrayOutputStream()
     val bufOutputImage = new ByteArrayOutputStream()
@@ -38,10 +40,10 @@ object JavaCVUtils {
     var i: Int = 0
     for (stage <- 1 to 3) {
       i = 0
-      var part = frameGrabber.getLengthInVideoFrames / 100
-      var startT: Int = part * 15
-      var midT: Int = part * 50
-      var lastT: Int = part * 85
+      val part = frameGrabber.getLengthInVideoFrames / 100
+      val startT: Int = part * 15
+      val midT: Int = part * 50
+      val lastT: Int = part * 85
       stage match {
         case 1 =>
           frameGrabber.setFrameNumber(startT)
@@ -65,8 +67,8 @@ object JavaCVUtils {
     bufOutputImage.close()
     bufOutputVideo.close()
 
-    val dataImage:Array[Byte] =  bufOutputImage.toByteArray
-    val dataVideo:Array[Byte] =  bufOutputVideo.toByteArray
-    (new ByteArrayInputStream(dataImage),new ByteArrayInputStream(dataVideo))
+    val dataImage: Array[Byte] = bufOutputImage.toByteArray
+    val dataVideo: Array[Byte] = bufOutputVideo.toByteArray
+    (new ByteArrayInputStream(dataImage), new ByteArrayInputStream(dataVideo), (originalWidth, originalHeight), (width, height))
   }
 }
