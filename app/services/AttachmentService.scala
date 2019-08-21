@@ -101,6 +101,7 @@ class AttachmentService @Inject()(
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
     val dataPart = DataPart("key", "value")
 
+    //TODO Check image size and perhaps don't create previews
     val image = Image.fromFile(file)
     val small = image.scaleToWidth(480, ScaleMethod.FastScale).stream(writer)
     val big = image.scaleToWidth(1280, ScaleMethod.FastScale).stream(writer)
@@ -123,13 +124,28 @@ class AttachmentService @Inject()(
             })
           Left("Error")
         } else {
-          val swResponses = result
+          val attachments = result
             .flatMap(response => response.json.asOpt(SeaweedResponse.reads()))
-            .map(sw => new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, metadata._2))
+            .zipWithIndex
+            .map { case (sw, i) => {
+              val (width, height) = i match {
+                case 0 => (image.width, image.height)
+                case 1 => {
+                  val bigImage = Image.fromStream(big)
+                  (bigImage.width, bigImage.height)
+                }
+                case 2 => {
+                  val smallImage = Image.fromStream(small)
+                  (smallImage.width, smallImage.height)
+                }
+              }
+              new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, metadata._2, width = Some(width), height = Some(height))
+            }
+            }
             .toList
-          swResponses.get(1).flatMap(bigPreviewAttach =>
-            swResponses.get(2).flatMap(smallPreviewAttach =>
-              attachmentDao.saveAttachment(swResponses.head.copy(metadata = metadata._1, previewSmall = Some(smallPreviewAttach), previewBig = Some(bigPreviewAttach)))
+          attachments.get(1).flatMap(bigPreviewAttach =>
+            attachments.get(2).flatMap(smallPreviewAttach =>
+              attachmentDao.saveAttachment(attachments.head.copy(metadata = metadata._1, previewSmall = Some(smallPreviewAttach), previewBig = Some(bigPreviewAttach)))
             ))
             .toRight("Some error!")
         }
@@ -140,7 +156,7 @@ class AttachmentService @Inject()(
     val filePart = MultipartFormData.FilePart("file", originalFilename, None, FileIO.fromPath(file.toPath))
     val dataPart = DataPart("key", "value")
 
-    val (image, video) = JavaCVUtils.createVideoPreview(file)
+    val (image, video, (originalWidth, originalHeight), (previewWidth, previewHeight)) = JavaCVUtils.createVideoPreview(file)
 
     val previewImageName = originalFilename + "_preview.jpg"
     val previewVideoName = originalFilename + "_preview.wepm"
@@ -170,12 +186,12 @@ class AttachmentService @Inject()(
             .flatMap(response => response.json.asOpt(SeaweedResponse.reads()))
             .zipWithIndex
             .map { case (sw: SeaweedResponse, i: Int) => {
-              val contentType = i match {
-                case 0 => metadata._2
-                case 1 => cntTypeImage
-                case 2 => cntTypeVideo
+              val (contentType, width, height) = i match {
+                case 0 => (metadata._2, originalWidth, originalHeight)
+                case 1 => (cntTypeImage, previewWidth, previewHeight)
+                case 2 => (cntTypeVideo, previewWidth, previewHeight)
               }
-              new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, contentType)
+              new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, contentType, width = Some(width), height = Some(height))
             }
             }
             .toList
@@ -250,27 +266,7 @@ class AttachmentService @Inject()(
             Left(ex)
           }
     }
-
   }
-
-  //    ws.url(seaweedfs_volume_url + "/submit")
-  //      .withRequestTimeout(30.seconds)
-  //      .post(Source(filePart :: dataPart :: Nil))
-  //      .map { response =>
-  //        response.json.asOpt(SeaweedResponse.reads()).flatMap { seaweedResponse =>
-  //          attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, true)
-  //            .map { attachment =>
-  //              // TODO old avatar file deleting
-  //              userService.setAvatar(userId, attachment._id.toString)
-  //              attachment
-  //            }
-  //
-  //        }
-  //      }
-  //      .recover { case ex =>
-  //        Logger("application").error(ex.getLocalizedMessage, ex)
-  //        None
-  //      }
 
   def getFile(id: String) = {
     attachmentDao.find(id)

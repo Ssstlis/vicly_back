@@ -26,8 +26,8 @@ class AttachmentDao @Inject()(
   //    }.exists(_.wasAcknowledged)
   //  }
 
-  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String, previewSmall: Option[Attachment] = None, previewBig: Option[Attachment] = None) = {
-    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, mime,metadata, previewSmall = previewSmall, previewBig = previewBig))
+  def saveFile(fid: String, filename: String, userId: Int, size: Long, isAvatar: Boolean, metadata: Map[String, String], mime: String, width: Option[Int] = None, height: Option[Int] = None, previewSmall: Option[Attachment] = None, previewBig: Option[Attachment] = None) = {
+    val result = dao.insert(Attachment(new ObjectId(), fid, userId, filename, size, isAvatar, mime, metadata, width = width, height = height, previewSmall = previewSmall, previewBig = previewBig))
     result.flatMap { objectId =>
       dao.findOneById(objectId)
     }

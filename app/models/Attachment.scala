@@ -20,23 +20,27 @@ case class Attachment(
   timestamp: Int = (System.currentTimeMillis() / 1000).toInt,
   previewSmall: Option[Attachment] = None,
   previewBig: Option[Attachment] = None,
+  width: Option[Int],
+  height: Option[Int]
 )
 
 trait AttachmentJson {
 
-    implicit lazy val writes:Writes[Attachment] = (
-      (__ \ "id").write[ObjectId] and
-      (__ \ "fid").write[String] and
-      (__ \ "user_id").write[Int] and
-      (__ \ "filename").write[String] and
-      (__ \ "size").write[Long] and
-      (__ \ "is_avatar").write[Boolean] and
-      (__ \ "mime").write[String] and
-      (__ \ "metadata").write[Map[String, String]] and
-      (__ \ "timestamp").write[Int] and
-      (__ \ "previewSmall").lazyWriteNullable(writes) and
-      (__ \ "previewBig").lazyWriteNullable(writes)
-      )(unlift(Attachment.unapply))
+  implicit lazy val writes: Writes[Attachment] = (
+    (__ \ "id").write[ObjectId] and
+    (__ \ "fid").write[String] and
+    (__ \ "user_id").write[Int] and
+    (__ \ "filename").write[String] and
+    (__ \ "size").write[Long] and
+    (__ \ "is_avatar").write[Boolean] and
+    (__ \ "mime").write[String] and
+    (__ \ "metadata").write[Map[String, String]] and
+    (__ \ "timestamp").write[Int] and
+    (__ \ "previewSmall").lazyWriteNullable(writes) and
+    (__ \ "previewBig").lazyWriteNullable(writes) and
+    (__ \ "width").writeNullable[Int] and
+    (__ \ "height").writeNullable[Int]
+    ) (unlift(Attachment.unapply))
 }
 
 object Attachment extends AttachmentJson
