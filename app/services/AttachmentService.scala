@@ -105,6 +105,7 @@ class AttachmentService @Inject()(
     val image = Image.fromFile(file)
     val small = image.scaleToWidth(480, ScaleMethod.FastScale).stream(writer)
     val big = image.scaleToWidth(1280, ScaleMethod.FastScale).stream(writer)
+    val ratio = image.width / image.height.toDouble
 
     val bigFilePart = MultipartFormData.FilePart("file", originalFilename, None, StreamConverters.fromInputStream(() => big))
     val smallFilePart = MultipartFormData.FilePart("file", originalFilename, None, StreamConverters.fromInputStream(() => small))
@@ -130,14 +131,8 @@ class AttachmentService @Inject()(
             .map { case (sw, i) => {
               val (width, height) = i match {
                 case 0 => (image.width, image.height)
-                case 1 => {
-                  val bigImage = Image.fromStream(big)
-                  (bigImage.width, bigImage.height)
-                }
-                case 2 => {
-                  val smallImage = Image.fromStream(small)
-                  (smallImage.width, smallImage.height)
-                }
+                case 1 => (1280, (ratio * 1280).toInt)
+                case 2 => (480, (ratio * 480).toInt)
               }
               new Attachment(new ObjectId(), sw.fileId, user.id, sw.fileName, sw.fileSize, false, metadata._2, width = Some(width), height = Some(height))
             }
