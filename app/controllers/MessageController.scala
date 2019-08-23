@@ -11,15 +11,15 @@ import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
 class MessageController @Inject()(
-                                   authUtils: AuthUtils,
-                                   chatService: ChatService,
-                                   messageService: MessageService,
-                                   userService: UserService
-                                 ) extends InjectedController {
+  authUtils: AuthUtils,
+  chatService: ChatService,
+  messageService: MessageService,
+  userService: UserService
+) extends InjectedController {
 
   /**
     * @api {POST} /api/message/postnewchat  Post in group chat
-    * @apiName  Post in group chat
+    * @apiName Post in group chat
     * @apiGroup Message
     * @apiParam {Array[String]}    attachments  Array of attachments ids in message.
     * @apiParam {Int}              chat_id      Chat id for post message.
@@ -80,13 +80,13 @@ class MessageController @Inject()(
       }.getOrElse {
         if (
           userService.findOne(targetUserId).isDefined &&
-            chatService.createUserChat(user.id, targetUserId, groupId)
+          chatService.createUserChat(user.id, targetUserId, groupId)
         ) chatService.findUserChat(user.id, targetUserId).collect { case chat
-            if {
-              val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
-              messageService.save(filledMessage)(chat).wasAcknowledged()
-            } => Ok
-          }.getOrElse(BadRequest) else BadRequest
+          if {
+            val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+            messageService.save(filledMessage)(chat).wasAcknowledged()
+          } => Ok
+        }.getOrElse(BadRequest) else BadRequest
       } else BadRequest
     }).getOrElse(BadRequest)
   }
@@ -169,9 +169,12 @@ class MessageController @Inject()(
       }
       message <- messageService.findById(new ObjectId(id))
     } yield {
-      if (message.from != user.id && chat.userIds.contains(user.id)) messageService.read(oid)(chat).collect {
-        case _ => Ok
-      }.getOrElse(BadRequest) else Forbidden
+      if (message.timestampRead.isDefined) Accepted
+      else if (message.from != user.id && chat.userIds.contains(user.id))
+        messageService.read(oid)(chat).collect {
+          case _ => Ok
+        }.getOrElse(BadRequest)
+      else Forbidden
     }).getOrElse(BadRequest)
   }
 
@@ -198,7 +201,9 @@ class MessageController @Inject()(
       }
       message <- messageService.findById(new ObjectId(id))
     } yield {
-      if (message.from != user.id && chat.userIds.contains(user.id)) messageService.delivery(oid)(chat).collect {
+      if (message.timestampDelivery.isDefined) Accepted
+      else if (message.from != user.id && chat.userIds.contains(user.id))
+        messageService.delivery(oid)(chat).collect {
         case _ => Ok
       }.getOrElse(BadRequest) else Forbidden
     }).getOrElse(BadRequest)
@@ -234,7 +239,6 @@ class MessageController @Inject()(
       Ok
     }).getOrElse(BadRequest)
   }
-
 
   /**
     * @api {POST} /api/message/delete  Delete message
