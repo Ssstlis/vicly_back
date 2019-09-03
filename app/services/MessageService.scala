@@ -9,10 +9,11 @@ import utils.Helper.StringExtended
 
 @Singleton
 class MessageService @Inject()(
-                                messageDao: MessageDao,
-                                chatService: ChatService,
-                                socketNotificationService: SocketNotificationService
-                              )(implicit configService: ConfigService) {
+  messageDao: MessageDao,
+  chatService: ChatService,
+  attachmentService: AttachmentService,
+  socketNotificationService: SocketNotificationService
+)(implicit configService: ConfigService) {
 
   implicit class MessageExtended(m: Message) {
     def encode = m.copy(text = m.text.encodeToken)
@@ -35,13 +36,13 @@ class MessageService @Inject()(
   def getGroupChatMessages(chatId: Int, page: Int) = {
     chatService.findById(chatId).map { chat =>
       findByChatId(chat.id, page)
-    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
+    }.getOrElse(List.empty).sortBy(mess => mess._1.timestampPost.timestamp)
   }
 
   def getUserChatMessages(userId: Int, page: Int)(implicit user: User) = {
     chatService.findUserChat(user.id, userId).map { chat =>
       findByChatId(chat.id, page)
-    }.getOrElse(List.empty).sortBy(_.timestampPost.timestamp)
+    }.getOrElse(List.empty).sortBy(mess => mess._1.timestampPost.timestamp)
   }
 
   def getUserChatMessagesFrom(userId: Int, messageId: String)(implicit user: User): Either[String, List[Message]] = {
@@ -60,7 +61,20 @@ class MessageService @Inject()(
     result
   }
 
-  def findByChatId(chatId: Int, page: Int) = messageDao.findByChatId(chatId, page: Int).flatMap(_.decode)
+  def findByChatId(chatId: Int, page: Int) = {
+    messageDao.findByChatId(chatId, page: Int)
+      .flatMap(_.decode)
+      .map { message =>
+        (message, getMessageAttachments(message))
+      }
+  }
+
+  def getMessageAttachments(message: Message) = {
+    message.attachments
+      .flatMap { attachmentId =>
+        attachmentService.findById(attachmentId)
+      }
+  }
 
   def findById(id: ObjectId) = messageDao.findById(id).flatMap(_.decode)
 

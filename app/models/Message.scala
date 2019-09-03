@@ -56,7 +56,7 @@ trait MessageJson {
     Reads.pure(None) and
     Reads.pure(None) and
     ((__ \ "attachments").read[List[String]] orElse Reads.pure(List.empty))
-  )(Message.apply _)
+    ) (Message.apply _)
 }
 
 object Message extends MessageJson
