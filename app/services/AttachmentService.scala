@@ -9,7 +9,7 @@ import cats.implicits._
 import com.google.inject.{Inject, Singleton}
 import com.sksamuel.scrimage.nio.JpegWriter
 import com.sksamuel.scrimage.{Image, ScaleMethod}
-import daos.AttachmentDao
+import daos.{AttachmentDao, UserDao}
 import models.{Attachment, SeaweedResponse, User}
 import org.apache.tika.Tika
 import org.apache.tika.exception.TikaException
@@ -32,7 +32,8 @@ import scala.language.postfixOps
 class AttachmentService @Inject()(
   attachmentDao: AttachmentDao,
   config: Configuration,
-  userService: UserService,
+  userDao: UserDao,
+  socketNotificationService: SocketNotificationService,
   ws: WSClient
 )(implicit ec: ExecutionContext) {
 
@@ -252,7 +253,7 @@ class AttachmentService @Inject()(
               attachment <- attachmentDao.saveFile(seaweedResponse.fileId, seaweedResponse.fileName, userId, seaweedResponse.fileSize, isAvatar = true, Map.empty, "image/*")
                 .toRight(new Exception("BD fid saving error,but seaweedfs saved successfully"))
             } yield {
-              userService.setAvatar(userId, attachment._id).wasAcknowledged()
+              setAvatar(userId, attachment._id).wasAcknowledged()
               attachment
             }
           }
@@ -364,6 +365,18 @@ class AttachmentService @Inject()(
 
   def findById(id: String) = {
     attachmentDao.findById(id)
+  }
+
+  def setAvatar(userId: Int, attachment_id: ObjectId) = {
+    val result = userDao.setAvatar(userId, attachment_id)
+    if (result.isUpdateOfExisting) socketNotificationService.userSetAvatar(userId, attachment_id.toString)
+    result
+  }
+
+  def removeAvatar(userId: Int)(groupId: Int) = {
+    val result = userDao.removeAvatar(userId)
+    if (result.isUpdateOfExisting) socketNotificationService.userRemoveAvatar(groupId, userId)
+    result
   }
 
   def remove(uuid: String) = attachmentDao.remove(uuid)

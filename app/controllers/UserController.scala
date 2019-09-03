@@ -10,13 +10,12 @@ import services._
 
 @Singleton
 class UserController @Inject()(
-                                authUtils: AuthUtils,
-                                groupService: GroupService,
-                                inviteService: InviteService,
-                                socketNotificationService: SocketNotificationService,
-                                userService: UserService
-                              ) extends InjectedController {
-
+  authUtils: AuthUtils,
+  groupService: GroupService,
+  inviteService: InviteService,
+  socketNotificationService: SocketNotificationService,
+  userService: UserService
+) extends InjectedController {
 
   /**
     * @api {POST} /api/user/login  Login
@@ -132,17 +131,17 @@ class UserController @Inject()(
     }.getOrElse(BadRequest)
   }
 
-  /**
-    * @api {GET} /api/user/remove_avatar  Remove avatar
-    * @apiName Remove avatar
-    * @apiGroup User
-    * @apiDescription Remove avatar from MongoDB.(TODO)
-    */
-  // TODO Remove avatar from SeaweedFS
-  def removeAvatar = authUtils.authenticateAction { request =>
-    val user = request.user
-    user.groupId.collect {
-      case groupId if userService.removeAvatar(user.id)(groupId).isUpdateOfExisting => Ok
-    }.getOrElse(BadRequest)
-  }
+//  /**
+//    * @api {GET} /api/user/remove_avatar  Remove avatar
+//    * @apiName Remove avatar
+//    * @apiGroup User
+//    * @apiDescription Remove avatar from MongoDB.(TODO)
+//    */
+//  // TODO Remove avatar from SeaweedFS
+//  def removeAvatar = authUtils.authenticateAction { request =>
+//    val user = request.user
+//    user.groupId.collect {
+//      case groupId if userService.removeAvatar(user.id)(groupId).isUpdateOfExisting => Ok
+//    }.getOrElse(BadRequest)
+//  }
 }

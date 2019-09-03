@@ -25,7 +25,6 @@ case class Attachment(
 )
 
 trait AttachmentJson {
-
   implicit lazy val writes: Writes[Attachment] = (
     (__ \ "id").write[ObjectId] and
     (__ \ "fid").write[String] and
@@ -41,6 +40,15 @@ trait AttachmentJson {
     (__ \ "width").writeNullable[Int] and
     (__ \ "height").writeNullable[Int]
     ) (unlift(Attachment.unapply))
+
+  def writesShort(attachment: Attachment): JsObject = {
+    Json.obj(
+      "id" -> attachment._id,
+      "mime" -> attachment.mime,
+      "width" -> attachment.width,
+      "height" -> attachment.height
+    )
+  }
 }
 
 object Attachment extends AttachmentJson

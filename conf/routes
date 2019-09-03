@@ -6,7 +6,7 @@ POST        /api/user/update_password                                controllers
 GET         /api/user/archive                                        controllers.UserController.archive(userId: Option[Int])
 GET         /api/user/set_status/:status                             controllers.UserController.setStatus(status: String)
 GET         /api/user/clear_status                                   controllers.UserController.removeStatus
-GET         /api/user/remove_avatar                                  controllers.UserController.removeAvatar
+#GET         /api/user/remove_avatar                                  controllers.UserController.removeAvatar
 
 #Invite
 POST        /api/invite                                              controllers.InviteController.create()

@@ -2,12 +2,13 @@ package controllers
 
 import actions.AuthUtils
 import com.google.inject.{Inject, Singleton}
-import models.Message
+import models.{Message, User}
 import org.bson.types.ObjectId
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.InjectedController
 import services.{ChatService, MessageService, UserService}
 import utils.JsonHelper.ObjectIdFormat
+import models.json.MessageJson._
 
 @Singleton
 class MessageController @Inject()(
@@ -28,7 +29,7 @@ class MessageController @Inject()(
     *                  {
     *                  "attachments": []
     *                  "chat_id": 11
-    *                  "message": "PRIVET PRIVET"
+    *                  "message": "PRIVET PRIVET"writesWithAttachments
     *                  }
     * @apiDescription Send message in group chat.
     */
@@ -100,7 +101,8 @@ class MessageController @Inject()(
     * @apiDescription Return page of messages from chat where every page consist of 20 messages.
     */
   def getGroupChatMessages(chatId: Int, page: Int) = authUtils.authenticateAction { _ =>
-    Ok(Json.toJson(messageService.getGroupChatMessages(chatId: Int, page: Int)))
+    val messages = messageService.getGroupChatMessages(chatId, page)
+    Ok(Json.toJson(messages)(Writes.list(writesWithAttachments)))
   }
 
   /**
@@ -112,8 +114,9 @@ class MessageController @Inject()(
     * @apiDescription Return page of messages from uesr chat where every page consist of 20 messages.
     */
   def getUserChatMessages(userId: Int, page: Int) = authUtils.authenticateAction { request =>
-    implicit val user = request.user
-    Ok(Json.toJson(messageService.getUserChatMessages(userId, page)))
+    implicit val user: User = request.user
+    val messages = messageService.getUserChatMessages(userId, page)
+    Ok(Json.toJson(messages)(Writes.list(writesWithAttachments)))
   }
 
   /**
@@ -125,7 +128,7 @@ class MessageController @Inject()(
     * @apiDescription Return page of messages from chat.
     */
   def getUserChatMessagesFrom(userId: Int, messageId: String) = authUtils.authenticateAction { request =>
-    implicit val user = request.user
+    implicit val user: User = request.user
     messageService.getUserChatMessagesFrom(userId, messageId) match {
       case Right(messages) => Ok(Json.toJson(messages))
       case Left(error) => BadRequest(Json.obj("error" -> error))
@@ -204,8 +207,8 @@ class MessageController @Inject()(
       if (message.timestampDelivery.isDefined) Accepted
       else if (message.from != user.id && chat.userIds.contains(user.id))
         messageService.delivery(oid)(chat).collect {
-        case _ => Ok
-      }.getOrElse(BadRequest) else Forbidden
+          case _ => Ok
+        }.getOrElse(BadRequest) else Forbidden
     }).getOrElse(BadRequest)
   }
 
