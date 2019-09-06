@@ -130,18 +130,4 @@ class UserController @Inject()(
       case groupId if userService.removeStatus(user.id)(groupId).isUpdateOfExisting => Ok
     }.getOrElse(BadRequest)
   }
-
-//  /**
-//    * @api {GET} /api/user/remove_avatar  Remove avatar
-//    * @apiName Remove avatar
-//    * @apiGroup User
-//    * @apiDescription Remove avatar from MongoDB.(TODO)
-//    */
-//  // TODO Remove avatar from SeaweedFS
-//  def removeAvatar = authUtils.authenticateAction { request =>
-//    val user = request.user
-//    user.groupId.collect {
-//      case groupId if userService.removeAvatar(user.id)(groupId).isUpdateOfExisting => Ok
-//    }.getOrElse(BadRequest)
-//  }
 }
