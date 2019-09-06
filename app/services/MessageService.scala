@@ -106,7 +106,7 @@ class MessageService @Inject()(
 
   def change(id: ObjectId, userId: Int, key: String, text: String)(groupId: Int, chat: Chat) = {
     val result = messageDao.change(id, userId, key, text.encodeToken)
-    if (result.isUpdateOfExisting) socketNotificationService.changed(groupId, id, chat.userIds)
+    if (result.isUpdateOfExisting) socketNotificationService.changed(groupId, id, chat, chat.userIds)
     result
   }
 
