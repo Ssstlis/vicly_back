@@ -35,8 +35,8 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
       (_: Int) => subscriberService.allSubscribers)
   }
 
-  def changed(groupId: Int, id: ObjectId, userIds: List[Int]) = {
-    push(3, groupId, Json.obj("id" -> id), userIds.contains,
+  def changed(groupId: Int, messageId: ObjectId, chat: Chat, userIds: List[Int]) = {
+    push(3, groupId, Json.obj("id" -> messageId, "chat" -> chat), userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 
