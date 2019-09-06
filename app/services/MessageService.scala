@@ -112,14 +112,18 @@ class MessageService @Inject()(
 
   def softDelete(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.softDelete(id)
-    if (result.isUpdateOfExisting) socketNotificationService.softDelete(groupId, id, chat.userIds)
-    result
+    if (result.isUpdateOfExisting) {
+      socketNotificationService.softDelete(groupId, id, chat.userIds)
+      Some(result)
+    } else None
   }
 
   def remove(id: ObjectId)(groupId: Int, chat: Chat) = {
     val result = messageDao.removeById(id)
-    if (result.isUpdateOfExisting) socketNotificationService.remove(groupId, id, chat.userIds)
-    result
+    if (result.wasAcknowledged()) {
+      socketNotificationService.remove(groupId, id, chat.userIds)
+      Some(result)
+    } else None
   }
 
   def findChatIdByObjectId(id: ObjectId) = messageDao.findChatIdByObjectId(id)

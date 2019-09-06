@@ -267,10 +267,10 @@ class MessageController @Inject()(
       oid = new ObjectId(id)
       chatId <- messageService.findChatIdByObjectId(oid)
       chat <- chatService.findById(chatId)
-      if (mode match {
+      result <-  (mode match {
         case 0 => messageService.softDelete(oid) _
         case 1 => messageService.remove(oid) _
-      }) (groupId, chat).isUpdateOfExisting
+      }) (groupId, chat)
     } yield {
       Ok
     }).getOrElse(BadRequest)

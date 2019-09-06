@@ -41,12 +41,13 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   }
 
   def softDelete(groupId: Int, id: ObjectId, userIds: List[Int]) = {
-    push(2, groupId, Json.obj("id" -> id), userIds.contains,
+    push(2, 0, Json.obj("id" -> id), userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 
   def remove(groupId: Int, id: ObjectId, userIds: List[Int]) = {
-    push(1, groupId, Json.obj("id" -> id), userIds.contains, (_: Int) => subscriberService.allSubscribers)
+    push(1, 0, Json.obj("id" -> id), userIds.contains,
+      (_: Int) => subscriberService.allSubscribers)
   }
 
   // TODO need rework of subscribers map For get more control
@@ -79,7 +80,7 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
       (_: Int) => subscriberService.allSubscribers)
   }
 
-  def newGroupChat(chat:Chat) = {
+  def newGroupChat(chat: Chat) = {
     push(21, 0, Json.toJson(chat), chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
