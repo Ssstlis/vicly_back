@@ -41,12 +41,12 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   }
 
   def softDelete(groupId: Int, messageId: ObjectId, chat: Chat, userIds: List[Int]) = {
-    push(2, 0, Json.obj("id" -> messageId, chat -> chat), userIds.contains,
+    push(2, 0, Json.obj("id" -> messageId, "chat" -> chat), userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 
   def remove(groupId: Int, messageId: ObjectId, chat: Chat, userIds: List[Int]) = {
-    push(1, 0, Json.obj("id" -> messageId, chat -> chat), userIds.contains,
+    push(1, 0, Json.obj("id" -> messageId, "chat" -> chat), userIds.contains,
       (_: Int) => subscriberService.allSubscribers)
   }
 
