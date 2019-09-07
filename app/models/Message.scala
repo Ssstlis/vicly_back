@@ -12,7 +12,8 @@ case class Message(
   key: String,
   text: String,
   deleted: Boolean,
-  @Key("reply_for") replyForO: Option[ObjectId],
+  @Key("reply_for") threadId: Option[ObjectId],
+  @Key("quote_for") quoteFor: Option[ObjectId],
   @Key("chat_id") chatId: Int,
   @Key("timestamp_post") timestampPost: MessageTime,
   @Key("timestamp_change") timestampChange: Option[MessageTime] = None,
@@ -28,7 +29,8 @@ trait MessageJson {
       "from" -> m.from,
       "key" -> m.key,
       "message" -> m.text,
-      "reply_for" -> m.replyForO,
+      "thread_id" -> m.threadId,
+      "quote_for" -> m.quoteFor,
       "timestamp_post" -> m.timestampPost,
       "timestamp_change" -> m.timestampChange,
       "timestamp_delivery" -> m.timestampDelivery,
@@ -43,6 +45,25 @@ trait MessageJson {
     toJson(m) + ("chat" -> Json.toJson(chat))
   }
 
+  def writesWithAttachments(m: Message, attachments: Seq[Attachment]) = {
+    Json.obj(
+      "id" -> m._id,
+      "from" -> m.from,
+      "key" -> m.key,
+      "message" -> m.text,
+      "reply_for" -> m.threadId,
+      "timestamp_post" -> m.timestampPost,
+      "timestamp_change" -> m.timestampChange,
+      "timestamp_delivery" -> m.timestampDelivery,
+      "timestamp_read" -> m.timestampRead,
+      "attachments" -> attachments
+    )
+  }
+
+  def writesWithAttachmentsAndChat(m: Message, attachments: Seq[Attachment], chat: Chat) = {
+    writesWithAttachments(m, attachments) + ("chat" -> Json.toJson(chat))
+  }
+
   def reads(from: Int): Reads[Message] = (
     Reads.pure(new ObjectId()) and
     Reads.pure(from) and
@@ -50,6 +71,7 @@ trait MessageJson {
     (__ \ "message").read[String] and
     Reads.pure(false) and
     (__ \ "reply_for").readNullable[ObjectId] and
+    (__ \ "quote_for").readNullable[ObjectId] and
     (__ \ "chat_id").read[Int] and
     Reads.pure(MessageTime()) and
     Reads.pure(None) and

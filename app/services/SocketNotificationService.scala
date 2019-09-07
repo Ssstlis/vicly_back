@@ -2,9 +2,10 @@ package services
 
 import akka.actor.ActorRef
 import com.google.inject.{Inject, Singleton}
-import models.{Chat, Message}
+import models.json.MessageJson.writesWithAttachments
+import models.{Attachment, Chat, Message}
 import org.bson.types.ObjectId
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsValue, Json, Writes}
 import utils.JsonHelper.ObjectIdFormat
 
 @Singleton
@@ -51,9 +52,9 @@ class SocketNotificationService @Inject()(subscriberService: SubscriberService) 
   }
 
   // TODO need rework of subscribers map For get more control
-  def newMessage(message: Message, chat: Chat) = {
+  def newMessage(message: (Message, Seq[Attachment]), chat: Chat) = {
     val json = Json.obj(
-      "message" -> Json.toJson(message)(Message.writes(chat))
+      "message" -> Message.writesWithAttachmentsAndChat(message._1, message._2, chat)
     )
     push(0, 0, json, chat.userIds.contains,
       (_: Int) => subscriberService.allSubscribers)

@@ -13,7 +13,7 @@ object MessageJson {
         "from" -> m.from,
         "key" -> m.key,
         "message" -> m.text,
-        "reply_for" -> m.replyForO,
+        "reply_for" -> m.threadId,
         "timestamp_post" -> m.timestampPost,
         "timestamp_change" -> m.timestampChange,
         "timestamp_delivery" -> m.timestampDelivery,
