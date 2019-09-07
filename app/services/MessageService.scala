@@ -28,7 +28,7 @@ class MessageService @Inject()(
 
   def sendMessageInChat(message: Message)(implicit user: User) = {
     chatService.findGroupChatWithUser(user.id, message.chatId).map { case chat =>
-      val filledMessage = message.copy(chatId = chat.id, replyForO = message.replyForO)
+      val filledMessage = message.copy(chatId = chat.id, threadId = message.threadId)
       save(filledMessage)(chat).wasAcknowledged()
     }
   }
@@ -56,7 +56,8 @@ class MessageService @Inject()(
   def save(message: Message)(chat: Chat) = {
     val result = messageDao.dao.save(message.encode)
     if (result.wasAcknowledged()) {
-      socketNotificationService.newMessage(message, chat)
+
+      socketNotificationService.newMessage((message,this.getMessageAttachments(message)), chat)
     }
     result
   }

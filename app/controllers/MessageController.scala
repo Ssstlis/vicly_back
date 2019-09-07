@@ -74,7 +74,7 @@ class MessageController @Inject()(
       if (targetUserId != 0 && userService.findByIdNonArchive(targetUserId).isDefined) chatService.findUserChat(user.id, targetUserId).map { chat =>
         if (
           userService.findOne(targetUserId).isDefined && {
-            val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+            val filledMessage = message.copy(chatId = chat.id, threadId = replyForO)
             messageService.save(filledMessage)(chat).wasAcknowledged()
           }
         ) Ok else ResetContent
@@ -84,7 +84,7 @@ class MessageController @Inject()(
           chatService.createUserChat(user.id, targetUserId, groupId)
         ) chatService.findUserChat(user.id, targetUserId).collect { case chat
           if {
-            val filledMessage = message.copy(chatId = chat.id, replyForO = replyForO)
+            val filledMessage = message.copy(chatId = chat.id, threadId = replyForO)
             messageService.save(filledMessage)(chat).wasAcknowledged()
           } => Ok
         }.getOrElse(BadRequest) else BadRequest
