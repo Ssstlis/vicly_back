@@ -1,10 +1,10 @@
 import cats.Applicative
-import cats.effect.{ ConcurrentEffect, ExitCode, IO, IOApp, Sync, Timer }
+import cats.effect.{ConcurrentEffect, ExitCode, IO, IOApp, Sync, Timer}
 import cats.syntax.apply._
 import cats.syntax.functor._
 import io.circe.Json
 import org.http4s.Status
-import org.http4s.{ EntityEncoder, HttpRoutes, Response }
+import org.http4s.{EntityEncoder, HttpRoutes, Response}
 import org.http4s.dsl.impl.Root
 import tofu.common.Console
 import org.http4s.circe._
@@ -52,6 +52,7 @@ object Main extends IOApp {
       .as(ExitCode.Success)
   }
 
-  override def run(args: List[String]): IO[ExitCode] =
+  override def run(args: List[String]): IO[ExitCode] = {
     Console.apply[IO].putStrLn("Hello, dude") *> mkApp[IO]
+  }
 }

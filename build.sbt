@@ -1,16 +1,16 @@
-import Dependencies.Libraries
+import Dependencies._
+
+addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
+addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
 lazy val vicly_backend_new = project
   .in(file("new"))
   .settings(
     scalafmtOnCompile := true,
-    packageName in Docker := "vicly_backend_new",
-    dockerBaseImage := "openjdk:8u201-jre-alpine3.9",
-    dockerExposedPorts ++= Seq(8080),
-    dockerUpdateLatest := true,
+    baseDockerSettings,
     libraryDependencies ++= Seq(
-          compilerPlugin(Libraries.kindProjector cross CrossVersion.full),
-          compilerPlugin(Libraries.betterMonadicFor),
+          compilerPlugin(CompilePlugins.kindProjector cross CrossVersion.full),
+          compilerPlugin(CompilePlugins.betterMonadicFor),
           Libraries.cats,
           Libraries.catsEffect,
           Libraries.catsMeowMtl,
@@ -29,8 +29,6 @@ lazy val vicly_backend_new = project
           Libraries.http4sClient,
           Libraries.http4sCirce,
           Libraries.http4sJwtAuth,
-          Libraries.log4cats,
-          Libraries.logback % Runtime,
           Libraries.newtype,
           Libraries.refinedCore,
           Libraries.refinedCats,
@@ -38,23 +36,15 @@ lazy val vicly_backend_new = project
           Libraries.doobiePg,
           Libraries.doobieHikari
         ),
-    scalacOptions ++= Seq(
-          //      "-Ypartial-unification",
-          "-deprecation",
-          "-explaintypes",
-          "-feature",
-          "-encoding",
-          "UTF-8",
-          "-language:higherKinds",
-          "-language:postfixOps",
-          "-language:implicitConversions",
-          "-feature",
-          "-Xfatal-warnings",
-          "-Ybackend-parallelism",
-          "8"
-        ),
     name := "backend_new",
     version := "0.1",
     scalaVersion := "2.13.1"
   )
   .enablePlugins(UniversalPlugin, DockerPlugin, JavaAppPackaging)
+
+val baseDockerSettings: Seq[Def.Setting[_]] = Seq(
+  packageName in Docker := "vicly_backend_new",
+  dockerBaseImage := "openjdk:8u201-jre-alpine3.9",
+  dockerExposedPorts ++= Seq(8080),
+  dockerUpdateLatest := true
+)

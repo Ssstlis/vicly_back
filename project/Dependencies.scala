@@ -12,7 +12,6 @@ object Dependencies {
     val fs2           = "2.3.0"
     val http4s        = "0.21.2"
     val http4sJwtAuth = "0.0.4"
-    val log4cats      = "1.0.1"
     val newtype       = "0.4.3"
     val refined       = "0.9.13"
     val tofu          = "0.7.2.1"
@@ -20,7 +19,6 @@ object Dependencies {
 
     val betterMonadicFor = "0.3.1"
     val kindProjector    = "0.11.0"
-    val logback          = "1.2.3"
 
     val scalaCheck    = "1.14.3"
     val scalaTest     = "3.1.1"
@@ -59,22 +57,19 @@ object Dependencies {
 
     val http4sJwtAuth = "dev.profunktor" %% "http4s-jwt-auth" % Versions.http4sJwtAuth
 
-    val refinedCore = "eu.timepit" %% "refined"      % Versions.refined
-    val refinedCats = "eu.timepit" %% "refined-cats" % Versions.refined
+    val refinedCore = "eu.timepit"  %% "refined"      % Versions.refined
+    val refinedCats = "eu.timepit"  %% "refined-cats" % Versions.refined
+    val newtype     = "io.estatico" %% "newtype"      % Versions.newtype
+  }
 
-    val log4cats = "io.chrisdavenport" %% "log4cats-slf4j" % Versions.log4cats
-    val newtype  = "io.estatico"       %% "newtype"        % Versions.newtype
-
-    // Compiler plugins
-    val betterMonadicFor = "com.olegpy"    %% "better-monadic-for" % Versions.betterMonadicFor
-    val kindProjector    = "org.typelevel" % "kind-projector"      % Versions.kindProjector
-
-    // Runtime
-    val logback = "ch.qos.logback" % "logback-classic" % Versions.logback
-
-    // Test
+  object TestLibraries {
     val scalaCheck    = "org.scalacheck"    %% "scalacheck"      % Versions.scalaCheck
     val scalaTest     = "org.scalatest"     %% "scalatest"       % Versions.scalaTest
     val scalaTestPlus = "org.scalatestplus" %% "scalacheck-1-14" % Versions.scalaTestPlus
+  }
+
+  object CompilePlugins {
+    val betterMonadicFor = "com.olegpy"    %% "better-monadic-for" % Versions.betterMonadicFor
+    val kindProjector    = "org.typelevel" % "kind-projector"      % Versions.kindProjector
   }
 }
