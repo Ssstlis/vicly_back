@@ -16,9 +16,8 @@ import org.http4s.implicits._
 object Main extends IOApp {
 
   final class StatusPartialApplied[F[_]](status: Status) {
-    def apply[A: EntityEncoder[F, *]](body: A)(implicit F: Applicative[F]): F[Response[F]] = {
+    def apply[A: EntityEncoder[F, *]](body: A)(implicit F: Applicative[F]): F[Response[F]] =
       F.pure(Response[F](status = status, body = EntityEncoder[F, A].toEntity(body).body))
-    }
   }
 
   def Ok[F[_]] = new StatusPartialApplied[F](Status.Ok)
@@ -30,10 +29,11 @@ object Main extends IOApp {
       case GET -> Root / "hello" / name =>
         Ok[F](s"Hello, $name.")
       case a @ POST -> Root =>
-        a.attemptAs[Json].foldF(
-          failure => BadRequest[F](failure.toString),
-          Ok[F](_)
-        )
+        a.attemptAs[Json]
+          .foldF(
+            failure => BadRequest[F](failure.toString),
+            Ok[F](_)
+          )
     }
 
     Router("/" -> helloRoutes)
@@ -51,7 +51,6 @@ object Main extends IOApp {
       .drain
       .as(ExitCode.Success)
   }
-
 
   override def run(args: List[String]): IO[ExitCode] = {
     Console.apply[IO].putStrLn("Hello, dude") *> mkApp[IO]
