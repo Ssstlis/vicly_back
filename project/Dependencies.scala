@@ -17,6 +17,7 @@ object Dependencies {
     val tofu          = "0.7.2.1"
     val doobie        = "0.8.8"
     val flyway        = "6.3.2"
+    val log4cats      = "1.0.1"
 
     val betterMonadicFor = "0.3.1"
     val kindProjector    = "0.11.0"
@@ -64,6 +65,9 @@ object Dependencies {
     val refinedCore = "eu.timepit"  %% "refined"      % Versions.refined
     val refinedCats = "eu.timepit"  %% "refined-cats" % Versions.refined
     val newtype     = "io.estatico" %% "newtype"      % Versions.newtype
+
+    val log4cats = "io.chrisdavenport" %% "log4cats-slf4j" % Versions.log4cats
+
   }
 
   object TestLibraries {

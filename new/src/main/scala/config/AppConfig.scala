@@ -4,6 +4,7 @@ import cats.effect.{Async, ContextShift}
 import cats.implicits._
 import ciris._
 import ciris.refined._
+import eu.timepit.refined.cats.refTypeShow
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 
@@ -15,7 +16,7 @@ case class DatabaseConfig(
     driver: NonEmptyString,
     url: NonEmptyString,
     user: NonEmptyString,
-    password: NonEmptyString,
+    password: Secret[NonEmptyString],
     threadPoolSize: PosInt
 )
 
@@ -36,7 +37,7 @@ object AppConfig {
       prop("database.driver").as[NonEmptyString],
       prop("database.url").as[NonEmptyString],
       prop("database.user").as[NonEmptyString],
-      prop("database.password").as[NonEmptyString],
+      prop("database.password").as[NonEmptyString].secret,
       prop("database.thread").as[PosInt]
     ).mapN(DatabaseConfig.apply)
   }

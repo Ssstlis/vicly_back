@@ -36,7 +36,8 @@ lazy val vicly_backend_new = project
           Libraries.doobiePg,
           Libraries.doobieHikari,
           Libraries.doobieRefined,
-          Libraries.flywayCore
+          Libraries.flywayCore,
+          Libraries.log4cats
         ),
     name := "backend_new",
     version := "0.1",

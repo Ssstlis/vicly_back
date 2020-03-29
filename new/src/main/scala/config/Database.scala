@@ -1,8 +1,7 @@
 package config
 
-import cats.effect.{Async, Blocker, ContextShift, Resource, Sync}
+import cats.effect.{Async, Blocker, ContextShift, Resource}
 import doobie.hikari.HikariTransactor
-import org.flywaydb.core.Flyway
 
 import scala.concurrent.ExecutionContext
 
@@ -16,19 +15,9 @@ object Database {
       config.driver.value,
       config.url.value,
       config.user.value,
-      config.password.value,
+      config.password.valueHash,
       executionContext,
       blocker
     )
-  }
-
-  def initialize[F[_]: Sync](transactor: HikariTransactor[F]): F[Unit] = {
-    transactor.configure { dataSource =>
-      Sync[F].delay {
-        val flyWay = Flyway.configure().dataSource(dataSource).load()
-        flyWay.migrate()
-        ()
-      }
-    }
   }
 }
