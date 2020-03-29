@@ -3,6 +3,7 @@ package io.github.weakteam.controller
 import cats.effect.Sync
 import io.circe.Json
 import io.github.weakteam.util.http4s.StatusOps
+import io.github.weakteam.util.http4s.implicits._
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.io.{->, /, GET, POST, Root}
@@ -16,7 +17,7 @@ object HelloController {
         body
           .attemptAs[Json]
           .foldF(
-            failure => StatusOps.BadRequest[F](failure.toString),
+            StatusOps.BadRequest[F](_),
             StatusOps.Ok[F](_)
           )
     }
