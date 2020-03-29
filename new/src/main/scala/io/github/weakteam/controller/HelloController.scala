@@ -2,7 +2,7 @@ package io.github.weakteam.controller
 
 import cats.effect.Sync
 import io.circe.Json
-import io.github.weakteam.util.http4s.StatusOps
+import io.github.weakteam.util.http4s.ResponseOps
 import io.github.weakteam.util.http4s.implicits._
 import org.http4s.HttpRoutes
 import org.http4s.circe._
@@ -13,13 +13,13 @@ object HelloController {
     import dsl._
     HttpRoutes.of[F] {
       case GET -> Root / "hello" / name =>
-        StatusOps.Ok(s"Hello, $name.")
+        ResponseOps.Ok(s"Hello, $name.")
       case body @ POST -> Root =>
         body
           .attemptAs[Json]
           .foldF(
-            StatusOps.BadRequest[F](_),
-            StatusOps.Ok[F](_)
+            ResponseOps.BadRequest[F](_),
+            ResponseOps.Ok[F](_)
           )
     }
   }
