@@ -17,8 +17,9 @@ object Dependencies {
     val tofu          = "0.7.2.1"
     val doobie        = "0.8.8"
 
-    val betterMonadicFor = "0.3.1"
+    val bm4 = "0.3.1"
     val kindProjector    = "0.11.0"
+    val silencer = "1.6.0"
 
     val scalaCheck    = "1.14.3"
     val scalaTest     = "3.1.1"
@@ -69,7 +70,9 @@ object Dependencies {
   }
 
   object CompilePlugins {
-    val betterMonadicFor = "com.olegpy"    %% "better-monadic-for" % Versions.betterMonadicFor
-    val kindProjector    = "org.typelevel" % "kind-projector"      % Versions.kindProjector
+    val bm4 = "com.olegpy" %% "better-monadic-for" % Versions.bm4
+    val kindProjector = "org.typelevel" % "kind-projector" % Versions.kindProjector
+    val silencer = "com.github.ghik" % "silencer-plugin" % Versions.silencer cross CrossVersion.full
+    val silencerLib = "com.github.ghik" % "silencer-lib" % Versions.silencer % Provided cross CrossVersion.full
   }
 }
