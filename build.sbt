@@ -1,24 +1,50 @@
-val vicly_backend = project
-  .in(file("."))
+import Dependencies._
+
+addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
+addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+
+lazy val vicly_backend_new = project
+  .in(file("new"))
   .settings(
+    scalafmtOnCompile := true,
+    baseDockerSettings,
     libraryDependencies ++= Seq(
-      ws,
-      guice,
-      "ru.tochkak" %% "play-plugins-salat" % "1.7.2",
-      "com.pauldijou" %% "jwt-play-json" % "0.19.0",
-      "org.typelevel" %% "cats-core" % "1.5.0",
-      "com.sksamuel.scrimage" %% "scrimage-core" % "2.1.8",
-      "com.sksamuel.scrimage" %% "scrimage-io-extra" % "2.1.8",
-      "com.sksamuel.scrimage" %% "scrimage-filters" % "2.1.8",
-      "org.apache.tika" % "tika-core" % "1.20",
-      "org.apache.tika" % "tika-parsers" % "1.20",
-      "jakarta.ws.rs" % "jakarta.ws.rs-api" % "2.1.4",
-      "org.bytedeco" % "javacv-platform" % "1.5.1",
-      "org.bytedeco" % "javacpp-presets" % "1.5.1",
-      "org.bytedeco" % "ffmpeg-platform" % "4.1.3-1.5.1"
-    ).map(_ exclude("javax.ws.rs", "javax.ws.rs-api")),
-    name := "backend",
+          compilerPlugin(CompilePlugins.kindProjector cross CrossVersion.full),
+          compilerPlugin(CompilePlugins.betterMonadicFor),
+          Libraries.cats,
+          Libraries.catsEffect,
+          Libraries.catsMeowMtl,
+          Libraries.catsRetry,
+          Libraries.tofu,
+          Libraries.circeCore,
+          Libraries.circeGeneric,
+          Libraries.circeParser,
+          Libraries.circeRefined,
+          Libraries.cirisCore,
+          Libraries.cirisEnum,
+          Libraries.cirisRefined,
+          Libraries.fs2,
+          Libraries.http4sDsl,
+          Libraries.http4sServer,
+          Libraries.http4sClient,
+          Libraries.http4sCirce,
+          Libraries.http4sJwtAuth,
+          Libraries.newtype,
+          Libraries.refinedCore,
+          Libraries.refinedCats,
+          Libraries.doobieCore,
+          Libraries.doobiePg,
+          Libraries.doobieHikari
+        ),
+    name := "backend_new",
     version := "0.1",
-    scalaVersion := "2.12.7"
+    scalaVersion := "2.13.1"
   )
-  .enablePlugins(PlayScala)
+  .enablePlugins(UniversalPlugin, DockerPlugin, JavaAppPackaging)
+
+val baseDockerSettings: Seq[Def.Setting[_]] = Seq(
+  packageName in Docker := "vicly_backend_new",
+  dockerBaseImage := "openjdk:8u201-jre-alpine3.9",
+  dockerExposedPorts ++= Seq(8080),
+  dockerUpdateLatest := true
+)
