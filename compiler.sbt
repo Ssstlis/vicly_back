@@ -1,3 +1,4 @@
+/*
 scalacOptions ++= List(
   "-deprecation", // Emit warning and location for usages of deprecated APIs.
   "-encoding", // Specify character encoding
@@ -30,7 +31,7 @@ scalacOptions ++= List(
   "-Xlint:type-parameter-shadow", // A local type parameter shadows a type already in scope.
   "-Xlint:unsound-match", // Pattern match may not be typesafe.
   "-Yno-adapted-args", // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
-  "-Ypartial-unification", // Enable partial unification in type constructor inference
+//  "-Ypartial-unification", // Enable partial unification in type constructor inference
   "-Ywarn-dead-code", // Warn when dead code is identified.
   "-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
   "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
@@ -47,3 +48,4 @@ scalacOptions ++= List(
   "-Ywarn-unused:privates", // Warn if a private member is unused.
   "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
 )
+*/
