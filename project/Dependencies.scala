@@ -17,7 +17,6 @@ object Dependencies {
     val tofu          = "0.7.2.1"
     val doobie        = "0.8.8"
     val flyway        = "6.3.2"
-    val log4cats      = "1.0.1"
 
     val betterMonadicFor = "0.3.1"
     val kindProjector    = "0.11.0"
@@ -38,6 +37,7 @@ object Dependencies {
     val catsRetry   = "com.github.cb372" %% "cats-retry"    % Versions.catsRetry
     val fs2         = "co.fs2"           %% "fs2-core"      % Versions.fs2
     val tofu        = "ru.tinkoff"       %% "tofu"          % Versions.tofu
+    val tofuLogging = "ru.tinkoff"       %% "tofu-logging"  % Versions.tofu
 
     val doobieCore    = "org.tpolecat" %% "doobie-core"     % Versions.doobie
     val doobiePg      = "org.tpolecat" %% "doobie-postgres" % Versions.doobie
@@ -65,9 +65,6 @@ object Dependencies {
     val refinedCore = "eu.timepit"  %% "refined"      % Versions.refined
     val refinedCats = "eu.timepit"  %% "refined-cats" % Versions.refined
     val newtype     = "io.estatico" %% "newtype"      % Versions.newtype
-
-    val log4cats = "io.chrisdavenport" %% "log4cats-slf4j" % Versions.log4cats
-
   }
 
   object TestLibraries {

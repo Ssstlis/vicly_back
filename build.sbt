@@ -16,6 +16,7 @@ lazy val vicly_backend_new = project
           Libraries.catsMeowMtl,
           Libraries.catsRetry,
           Libraries.tofu,
+          Libraries.tofuLogging,
           Libraries.circeCore,
           Libraries.circeGeneric,
           Libraries.circeParser,
@@ -36,8 +37,7 @@ lazy val vicly_backend_new = project
           Libraries.doobiePg,
           Libraries.doobieHikari,
           Libraries.doobieRefined,
-          Libraries.flywayCore,
-          Libraries.log4cats
+          Libraries.flywayCore
         ),
     name := "backend_new",
     version := "0.1",
