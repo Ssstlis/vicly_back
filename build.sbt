@@ -1,4 +1,5 @@
 import Dependencies._
+import BuildInfo._
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
@@ -88,6 +89,7 @@ lazy val vicly_backend_new = project
 
   )
   .enablePlugins(UniversalPlugin, DockerPlugin, JavaAppPackaging)
+  .withBuildInfo
 
 val baseDockerSettings: Seq[Def.Setting[_]] = Seq(
   packageName in Docker := "vicly_backend_new",

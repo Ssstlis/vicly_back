@@ -5,12 +5,12 @@ import org.http4s.{EntityEncoder, Response, Status}
 
 object ResponseOps {
   trait ResponseOps[F[_]] {
-    def apply[A: EntityEncoder[F, *]](body: A)(implicit F: Applicative[F]): F[Response[F]]
+    def apply[A: EntityEncoder[F, *]](body: A)(implicit F: Applicative[F]): Response[F]
   }
 
   private[ResponseOps] final class StatusPartialApplied[F[_]](status: Status) extends ResponseOps[F] {
-    def apply[A: EntityEncoder[F, *]](body: A)(implicit F: Applicative[F]): F[Response[F]] =
-      F.pure(Response[F](status).withEntity(body))
+    def apply[A: EntityEncoder[F, *]](body: A)(implicit F: Applicative[F]): Response[F] =
+      Response[F](status).withEntity(body)
   }
 
   def Ok[F[_]]: ResponseOps[F] = new StatusPartialApplied[F](Status.Ok)

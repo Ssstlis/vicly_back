@@ -7,7 +7,7 @@ import org.http4s.dsl.Http4sDsl
 object UserController {
   def routes[F[_]: Sync](implicit dsl: Http4sDsl[F]): HttpRoutes[F] = {
     import dsl._
-    val root: / = Root / "user"
+    val root = Root / "user"
     HttpRoutes.of[F] {
       case POST -> `root` / "login"           => ???
       case GET -> `root` / "logout"           => ???
