@@ -1,3 +1,0 @@
-FROM nginx:alpine
-COPY ./docs/ /usr/share/nginx/html
-RUN chown -R nginx:nginx /usr/share/nginx/html
