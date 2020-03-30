@@ -1,0 +1,25 @@
+version: '3.4'
+services:
+  postgreSQL:
+    restart: always
+    image: postgres:12.0-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - DEBUG=false
+      - POSTGRES_DB=vicly
+      - POSTGRES_PASSWORD=${POSTGRES_USER}
+      - POSTGRES_USER=${POSTGRES_USER}
+    volumes:
+      - ./new/src/main/resources/scheme.sql:/docker-entrypoint-initdb.d/init.sql
+
+  vicly_backend_new:
+    restart: always
+    image: vicly_backend_new:latest
+    network_mode: host
+    depends_on:
+      - postgreSQL
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=test

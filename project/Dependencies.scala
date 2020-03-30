@@ -16,6 +16,7 @@ object Dependencies {
     val refined       = "0.9.13"
     val tofu          = "0.7.2.1"
     val doobie        = "0.8.8"
+    val flyway        = "6.3.2"
 
     val betterMonadicFor = "0.3.1"
     val kindProjector    = "0.11.0"
@@ -36,10 +37,14 @@ object Dependencies {
     val catsRetry   = "com.github.cb372" %% "cats-retry"    % Versions.catsRetry
     val fs2         = "co.fs2"           %% "fs2-core"      % Versions.fs2
     val tofu        = "ru.tinkoff"       %% "tofu"          % Versions.tofu
+    val tofuLogging = "ru.tinkoff"       %% "tofu-logging"  % Versions.tofu
 
-    val doobieCore   = "org.tpolecat" %% "doobie-core"     % Versions.doobie
-    val doobiePg     = "org.tpolecat" %% "doobie-postgres" % Versions.doobie
-    val doobieHikari = "org.tpolecat" %% "doobie-postgres" % Versions.doobie
+    val doobieCore    = "org.tpolecat" %% "doobie-core"     % Versions.doobie
+    val doobiePg      = "org.tpolecat" %% "doobie-postgres" % Versions.doobie
+    val doobieHikari  = "org.tpolecat" %% "doobie-hikari"   % Versions.doobie
+    val doobieRefined = "org.tpolecat" %% "doobie-refined"  % Versions.doobie
+
+    val flywayCore = "org.flywaydb" % "flyway-core" % Versions.flyway
 
     val circeCore    = circe("circe-core")
     val circeGeneric = circe("circe-generic")
