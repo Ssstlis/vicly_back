@@ -8,7 +8,6 @@ object Dependencies {
     val catsMeowMtl   = "0.4.0"
     val catsRetry     = "1.1.0"
     val circe         = "0.13.0"
-    val ciris         = "1.0.4"
     val fs2           = "2.3.0"
     val http4s        = "0.21.2"
     val http4sJwtAuth = "0.0.4"
@@ -17,6 +16,7 @@ object Dependencies {
     val tofu          = "0.7.2.1"
     val doobie        = "0.8.8"
     val flyway        = "6.3.2"
+    val pureconfig    = "0.12.3"
 
     val bm4           = "0.3.1"
     val kindProjector = "0.11.0"
@@ -28,44 +28,35 @@ object Dependencies {
   }
 
   object Libraries {
-    def circe(artifact: String): ModuleID  = "io.circe"   %% artifact % Versions.circe
-    def ciris(artifact: String): ModuleID  = "is.cir"     %% artifact % Versions.ciris
-    def http4s(artifact: String): ModuleID = "org.http4s" %% artifact % Versions.http4s
+    private val depLinker: (String => ModuleID) => Seq[String] => Seq[ModuleID] = f => _.map(f)
 
-    val cats        = "org.typelevel"    %% "cats-core"     % Versions.cats
-    val catsMeowMtl = "com.olegpy"       %% "meow-mtl-core" % Versions.catsMeowMtl
-    val catsEffect  = "org.typelevel"    %% "cats-effect"   % Versions.catsEffect
-    val catsRetry   = "com.github.cb372" %% "cats-retry"    % Versions.catsRetry
-    val fs2         = "co.fs2"           %% "fs2-core"      % Versions.fs2
-    val tofu        = "ru.tinkoff"       %% "tofu"          % Versions.tofu
-    val tofuLogging = "ru.tinkoff"       %% "tofu-logging"  % Versions.tofu
+    private val circeL: String => ModuleID      = s => "io.circe"              %% s"circe$s"      % Versions.circe
+    private val doobieL: String => ModuleID     = s => "org.tpolecat"          %% s"doobie$s"     % Versions.doobie
+    private val http4sL: String => ModuleID     = s => "org.http4s"            %% s"http4s$s"     % Versions.http4s
+    private val tofuL: String => ModuleID       = s => "ru.tinkoff"            %% s"tofu$s"       % Versions.tofu
+    private val refinedL: String => ModuleID    = s => "eu.timepit"            %% s"refined$s"    % Versions.refined
+    private val pureConfigL: String => ModuleID = s => "com.github.pureconfig" %% s"pureconfig$s" % Versions.pureconfig
 
-    val doobieCore    = "org.tpolecat" %% "doobie-core"     % Versions.doobie
-    val doobiePg      = "org.tpolecat" %% "doobie-postgres" % Versions.doobie
-    val doobieHikari  = "org.tpolecat" %% "doobie-hikari"   % Versions.doobie
-    val doobieRefined = "org.tpolecat" %% "doobie-refined"  % Versions.doobie
-
+    val fs2        = "co.fs2"       %% "fs2-core"   % Versions.fs2
     val flywayCore = "org.flywaydb" % "flyway-core" % Versions.flyway
 
-    val circeCore    = circe("circe-core")
-    val circeGeneric = circe("circe-generic")
-    val circeParser  = circe("circe-parser")
-    val circeRefined = circe("circe-refined")
+    val cats = Seq(
+      "org.typelevel"    %% "cats-core"     % Versions.cats,
+      "com.olegpy"       %% "meow-mtl-core" % Versions.catsMeowMtl,
+      "org.typelevel"    %% "cats-effect"   % Versions.catsEffect,
+      "com.github.cb372" %% "cats-retry"    % Versions.catsRetry
+    )
 
-    val cirisCore    = ciris("ciris")
-    val cirisEnum    = ciris("ciris-enumeratum")
-    val cirisRefined = ciris("ciris-refined")
-
-    val http4sDsl    = http4s("http4s-dsl")
-    val http4sServer = http4s("http4s-blaze-server")
-    val http4sClient = http4s("http4s-blaze-client")
-    val http4sCirce  = http4s("http4s-circe")
+    val tofu       = depLinker(tofuL)(Seq("-core", "-logging", "-env"))
+    val doobie     = depLinker(doobieL)(Seq("-core", "-postgres", "-hikari", "-refined"))
+    val circe      = depLinker(circeL)(Seq("-core", "-generic", "-parser", "-refined"))
+    val http4s     = depLinker(http4sL)(Seq("-dsl", "-blaze-server", "-blaze-client", "-circe"))
+    val refined    = depLinker(refinedL)(Seq("", "-cats"))
+    val pureConfig = depLinker(pureConfigL)(Seq("", "-cats-effect"))
 
     val http4sJwtAuth = "dev.profunktor" %% "http4s-jwt-auth" % Versions.http4sJwtAuth
 
-    val refinedCore = "eu.timepit"  %% "refined"      % Versions.refined
-    val refinedCats = "eu.timepit"  %% "refined-cats" % Versions.refined
-    val newtype     = "io.estatico" %% "newtype"      % Versions.newtype
+    val newtype = "io.estatico" %% "newtype" % Versions.newtype
   }
 
   object TestLibraries {

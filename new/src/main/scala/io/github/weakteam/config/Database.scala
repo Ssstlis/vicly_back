@@ -1,6 +1,7 @@
 package io.github.weakteam.config
 
 import cats.effect.{Async, Blocker, ContextShift, Resource}
+import io.github.weakteam.config.AppConfig.DatabaseConfig
 import doobie.hikari.HikariTransactor
 
 import scala.concurrent.ExecutionContext
@@ -12,10 +13,10 @@ object Database {
       blocker: Blocker
   ): Resource[F, HikariTransactor[F]] = {
     HikariTransactor.newHikariTransactor[F](
-      config.driver.value,
-      config.url.value,
-      config.user.value,
-      config.password.valueHash,
+      config.driver,
+      config.url,
+      config.user,
+      config.password,
       executionContext,
       blocker
     )

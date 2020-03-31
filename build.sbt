@@ -1,5 +1,6 @@
 import Dependencies._
 import BuildInfo._
+import Dependencies.Libraries._
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
@@ -13,36 +14,13 @@ lazy val vicly_backend_new = project
           compilerPlugin(CompilePlugins.kindProjector cross CrossVersion.full),
           compilerPlugin(CompilePlugins.bm4),
           compilerPlugin(CompilePlugins.silencer),
-          Libraries.cats,
-          Libraries.catsEffect,
-          Libraries.catsMeowMtl,
-          Libraries.catsRetry,
-          Libraries.tofu,
-          Libraries.tofuLogging,
-          Libraries.circeCore,
-          Libraries.circeGeneric,
-          Libraries.circeParser,
-          Libraries.circeRefined,
-          Libraries.cirisCore,
-          Libraries.cirisEnum,
-          Libraries.cirisRefined,
-          Libraries.fs2,
-          Libraries.http4sDsl,
-          Libraries.http4sServer,
-          Libraries.http4sClient,
-          Libraries.http4sCirce,
-          Libraries.http4sJwtAuth,
-          Libraries.newtype,
-          Libraries.refinedCore,
-          Libraries.refinedCats,
-          Libraries.doobieCore,
-          Libraries.doobiePg,
-          Libraries.doobieHikari,
-          Libraries.doobieRefined,
-          Libraries.flywayCore,
-          CompilePlugins.silencerLib,
-          TestLibraries.scalaTest
-        ),
+          fs2,
+          http4sJwtAuth,
+          newtype,
+          flywayCore,
+          TestLibraries.scalaTest,
+          CompilePlugins.silencerLib
+        ) ++ cats ++ tofu ++ http4s ++ doobie ++ circe ++ refined ++ pureConfig,
     name := "backend_new",
     version := "0.1",
     scalaVersion := "2.13.1",

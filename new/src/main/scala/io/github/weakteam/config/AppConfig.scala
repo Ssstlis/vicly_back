@@ -1,44 +1,38 @@
 package io.github.weakteam.config
 
-import cats.effect.{Async, ContextShift}
-import cats.implicits._
-import ciris._
-import ciris.refined._
-import eu.timepit.refined.cats.refTypeShow
-import eu.timepit.refined.types.numeric.PosInt
-import eu.timepit.refined.types.string.NonEmptyString
+import cats.effect.{Blocker, ContextShift, Sync}
+import com.github.ghik.silencer.silent
+import io.github.weakteam.config.AppConfig.{DatabaseConfig, HttpConfig}
+import pureconfig.generic.auto._
+import pureconfig.generic.ProductHint
+import pureconfig.module.catseffect.syntax._
+import pureconfig.{CamelCase, ConfigFieldMapping, ConfigSource}
 
 final case class AppConfig(http: HttpConfig, db: DatabaseConfig)
 
-final case class HttpConfig(host: NonEmptyString, port: PosInt)
-
-case class DatabaseConfig(
-    driver: NonEmptyString,
-    url: NonEmptyString,
-    user: NonEmptyString,
-    password: Secret[NonEmptyString],
-    threadPoolSize: PosInt
-)
-
 object AppConfig {
-  def loadConfig[F[_]: Async: ContextShift]: F[AppConfig] = {
-    (httpDecoder, databaseDecoder).mapN(AppConfig.apply).load[F]
+  def load[F[_]: Sync: ContextShift](blocker: Blocker): F[AppConfig] = {
+    @silent implicit def hint[A]: ProductHint[A] = ProductHint(ConfigFieldMapping(CamelCase, CamelCase))
+    ConfigSource.default.at("app").loadF(blocker)
   }
 
-  private val httpDecoder: ConfigValue[HttpConfig] = {
-    (
-      prop("http.host").as[NonEmptyString],
-      prop("http.port").as[PosInt]
-    ).mapN(HttpConfig.apply)
-  }
+  final case class DatabaseConfig(
+//      driver: NonEmptyString,
+      driver: String,
+//      url: NonEmptyString,
+      url: String,
+//      user: NonEmptyString,
+      user: String,
+      password: String,
+      threadPoolSize: Int,
+//      chunks: PosInt
+      chunks: Int
+  )
 
-  private val databaseDecoder: ConfigValue[DatabaseConfig] = {
-    (
-      prop("database.driver").as[NonEmptyString],
-      prop("database.url").as[NonEmptyString],
-      prop("database.user").as[NonEmptyString],
-      prop("database.password").as[NonEmptyString].secret,
-      prop("database.thread").as[PosInt]
-    ).mapN(DatabaseConfig.apply)
-  }
+  final case class HttpConfig(
+//    host: NonEmptyString,
+      host: String,
+//    port: PosInt
+      port: Int
+  )
 }
