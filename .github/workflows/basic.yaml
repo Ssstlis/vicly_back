@@ -15,8 +15,22 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v2
+
+      - name: Cache SBT ivy cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.ivy2/cache
+          key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+
+      - name: Cache SBT
+        uses: actions/cache@v1
+        with:
+          path: ~/.sbt
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+
       - name: Setup Java and Scala
         uses: olafurpg/setup-scala@v5
+        
       - name: Format check
         run: sbt scalafmtCheck
 
@@ -27,7 +41,21 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v2
+
+      - name: Cache SBT ivy cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.ivy2/cache
+          key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+
+      - name: Cache SBT
+        uses: actions/cache@v1
+        with:
+          path: ~/.sbt
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+
       - name: Setup Java and Scala
         uses: olafurpg/setup-scala@v5
+        
       - name: Run tests & coverage
         run: sbt clean coverage test coverageReport
