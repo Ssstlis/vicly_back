@@ -6,6 +6,7 @@ import sbt.Keys._
 import sbt._
 import sbtbuildinfo.BuildInfoKeys._
 import sbtbuildinfo.{BuildInfoPlugin, _}
+
 object BuildInfo {
 
   implicit class BuildInfoOps(val project: Project) extends AnyVal {

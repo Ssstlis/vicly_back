@@ -1,7 +1,6 @@
 package io.github.weakteam
 
 import cats.effect.{ConcurrentEffect, ExitCode, IO, IOApp, Sync, Timer}
-import cats.syntax.apply._
 import cats.syntax.functor._
 import io.github.weakteam.controller.VersionController
 import org.http4s.HttpRoutes

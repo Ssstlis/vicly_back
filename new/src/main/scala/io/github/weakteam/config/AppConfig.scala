@@ -1,4 +1,4 @@
-package config
+package io.github.weakteam.config
 
 import cats.effect.{Async, ContextShift}
 import cats.implicits._

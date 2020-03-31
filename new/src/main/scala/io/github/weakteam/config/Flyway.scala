@@ -1,4 +1,4 @@
-package config
+package io.github.weakteam.config
 
 import org.flywaydb.core.{Flyway => JFlyway}
 import tofu.logging.{Logging, Logs}
@@ -23,7 +23,7 @@ object Flyway {
 
     for {
       implicit0(logging: Logging[F]) <- logsMigration.byName("migration")
-      _ <- logging.info(s"Creating flyway with config: $cfg")
+      _ <- logging.info(s"Creating flyway with io.github.weakteam.config: $cfg")
 
       flyway = JFlyway.configure
         .dataSource(cfg.url, cfg.user, cfg.pass)

@@ -1,4 +1,4 @@
-package model
+package io.github.weakteam.model
 
 import java.util.UUID
 
