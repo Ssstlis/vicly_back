@@ -19,7 +19,8 @@ lazy val vicly_backend_new = project
           newtype,
           flywayCore,
           TestLibraries.scalaTest,
-          CompilePlugins.silencerLib
+          CompilePlugins.silencerLib,
+          Libraries.flywayCore
         ) ++ cats ++ tofu ++ http4s ++ doobie ++ circe ++ refined ++ pureConfig,
     name := "backend_new",
     version := "0.1",

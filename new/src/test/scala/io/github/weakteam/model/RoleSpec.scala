@@ -1,5 +1,6 @@
 package io.github.weakteam.model
 
+import eu.timepit.refined.types.numeric.PosInt
 import io.circe.Json
 import io.circe.syntax._
 import io.github.weakteam.model.RoleSpec._
@@ -14,17 +15,17 @@ class RoleSpec extends AnyWordSpec with Matchers {
     }
 
     "valid encode" in {
-      roleJson.as[Role].map(_ mustBe role)
+      roleJson.as[Role] mustBe Right(role)
     }
   }
 }
 
 object RoleSpec {
-  val role = Role(1, 1, "test description")
+  val role = Role(PosInt.unsafeFrom(1), PosInt.unsafeFrom(1), "test description")
 
   val roleJson = Json.obj(
-    "id" -> Json.fromInt(1),
-    "groupId" -> Json.fromInt(1),
-    "description" -> Json.fromString("test description")
+    "id" -> 1.asJson,
+    "groupId" -> 1.asJson,
+    "description" -> "test description".asJson
   )
 }

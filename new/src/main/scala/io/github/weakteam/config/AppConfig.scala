@@ -18,21 +18,24 @@ object AppConfig {
 
   final case class DatabaseConfig(
 //      driver: NonEmptyString,
-      driver: String,
+    driver: String,
 //      url: NonEmptyString,
-      url: String,
+    url: String,
 //      user: NonEmptyString,
-      user: String,
-      password: String,
-      threadPoolSize: Int,
+    user: String,
+    password: String,
+    threadPoolSize: Int,
 //      chunks: PosInt
-      chunks: Int
+    chunks: Int,
+    maxLifetime: Option[Long],
+    connTimeout: Option[Long],
+    locations: Seq[String]
   )
 
   final case class HttpConfig(
 //    host: NonEmptyString,
-      host: String,
+    host: String,
 //    port: PosInt
-      port: Int
+    port: Int
   )
 }

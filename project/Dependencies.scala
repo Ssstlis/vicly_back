@@ -48,7 +48,7 @@ object Dependencies {
     )
 
     val tofu       = depLinker(tofuL)(Seq("-core", "-logging", "-env"))
-    val doobie     = depLinker(doobieL)(Seq("-core", "-postgres", "-hikari", "-refined"))
+    val doobie     = depLinker(doobieL)(Seq("-core", "-postgres", "-hikari", "-refined", "-postgres-circe"))
     val circe      = depLinker(circeL)(Seq("-core", "-generic", "-parser", "-refined"))
     val http4s     = depLinker(http4sL)(Seq("-dsl", "-blaze-server", "-blaze-client", "-circe"))
     val refined    = depLinker(refinedL)(Seq("", "-cats"))
