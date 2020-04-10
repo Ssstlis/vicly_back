@@ -1,22 +1,23 @@
 package io.github.weakteam
 
 import cats.arrow.FunctionK
-import cats.data.NonEmptyList
 import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resource, Sync, Timer}
 import cats.syntax.flatMap._
 import cats.syntax.apply._
-import cats.syntax.reducible._
-import cats.{~>}
+import cats.~>
 import config.AppConfig
 import io.github.weakteam.controller.{RoleController, VersionController}
 import io.github.weakteam.database.{DbTransactor, Flyway}
 import io.github.weakteam.repository.RoleRepository
 import io.github.weakteam.service.RoleService
 import org.http4s.HttpRoutes
+import org.http4s.client.Client
+import org.http4s.client.middleware.GZip
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
+import org.http4s.server.middleware.CORS
 import tofu.logging.Logs
 
 object Application extends IOApp {
@@ -25,13 +26,8 @@ object Application extends IOApp {
     implicit val dsl: Http4sDsl[F] = new Http4sDsl[F] {}
 
     Router(
-      "/" ->
-          NonEmptyList
-            .of(
-              VersionController.routes[F],
-              RoleController.routes[F](roleService)
-            )
-            .reduceK
+      "/" -> VersionController.routes[F],
+      "/api" -> RoleController.routes[F](roleService)
     )
   }
 
@@ -48,11 +44,21 @@ object Application extends IOApp {
       roleRep <- Resource.liftF(RoleRepository[I, F](trans, logProvider))
       roleService <- Resource.liftF(RoleService[I, F, F](roleRep, FunctionK.id, logProvider))
     } yield {
-      val router = mkRouter[F](roleService).orNotFound
-      Sync[F].delay(println(config)) *>
-        flyway.flatMap(_.migrate) *>
+
+      val router = {
+        (GZip[F](config.gzip.bufferSizeMultiplier * 1024) _)
+          .compose(Client.fromHttpApp[F])(
+            CORS(
+              mkRouter(roleService),
+              config.cors.toHttp4sCors
+            ).orNotFound
+          )
+          .toHttpApp
+      }
+
+      flyway.flatMap(_.migrate) *>
         BlazeServerBuilder[F]
-          .bindHttp(8080, "localhost")
+          .bindHttp(config.http.port, config.http.host)
           .withHttpApp(router)
           .withNio2(true)
           .serve
