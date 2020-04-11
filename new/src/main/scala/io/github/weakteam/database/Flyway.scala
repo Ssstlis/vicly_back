@@ -22,8 +22,8 @@ object Flyway {
     logs.byName("migration").map { implicit logging =>
       logging.info(s"Creating flyway with io.github.weakteam.config: $cfg").as {
         val flyway = JFlyway.configure
-          .dataSource(cfg.url, cfg.user, cfg.password)
-          .locations(cfg.locations: _*)
+          .dataSource(cfg.url.value, cfg.user.value, cfg.password)
+          .locations(cfg.locations.toList.map(_.value): _*)
           .load
         new Flyway[F](flyway)
       }

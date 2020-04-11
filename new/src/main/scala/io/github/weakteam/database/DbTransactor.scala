@@ -12,17 +12,17 @@ object DbTransactor {
   def resource[F[_]: Async: ContextShift](config: DatabaseConfig): Resource[F, ConnectionIO ~> F] = {
     import config._
 
-    val ceSize = threadPoolSize min 32
+    val ceSize = threadPoolSize.value min 32
     for {
       ce <- ExecutionContexts.fixedThreadPool[F](ceSize)
       te <- ExecutionContexts.cachedThreadPool[F]
       blocker = Blocker.liftExecutionContext(te)
-      xa <- HikariTransactor.newHikariTransactor(driver, url, user, password, ce, blocker)
+      xa <- HikariTransactor.newHikariTransactor(driver.value, url.value, user.value, password, ce, blocker)
       _ <- Resource.liftF(xa.configure { ds =>
             Async[F].delay {
-              ds.setMaximumPoolSize(threadPoolSize)
-              maxLifetime.foreach(ds.setMaxLifetime)
-              connTimeout.foreach(ds.setConnectionTimeout)
+              ds.setMaximumPoolSize(threadPoolSize.value)
+              maxLifetime.foreach(v => ds.setMaxLifetime(v.value))
+              connTimeout.foreach(v => ds.setConnectionTimeout(v.value))
             }
           })
     } yield xa.trans

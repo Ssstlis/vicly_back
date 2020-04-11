@@ -58,7 +58,7 @@ object Application extends IOApp {
 
       flyway.flatMap(_.migrate) *>
         BlazeServerBuilder[F]
-          .bindHttp(config.http.port, config.http.host)
+          .bindHttp(config.http.port.value, config.http.host.value)
           .withHttpApp(router)
           .withNio2(true)
           .serve

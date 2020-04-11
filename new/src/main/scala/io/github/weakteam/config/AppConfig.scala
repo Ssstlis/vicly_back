@@ -1,5 +1,6 @@
 package io.github.weakteam.config
 
+import cats.data.{NonEmptyList}
 import cats.effect.{Blocker, ContextShift, Sync}
 import com.github.ghik.silencer.silent
 import io.github.weakteam.config.AppConfig.{Cors, DatabaseConfig, GZip, HttpConfig}
@@ -8,6 +9,9 @@ import pureconfig.generic.auto._
 import pureconfig.generic.ProductHint
 import pureconfig.module.catseffect.syntax._
 import pureconfig.{CamelCase, ConfigFieldMapping, ConfigSource}
+import eu.timepit.refined.pureconfig._
+import eu.timepit.refined.types.numeric.{PosInt, PosLong}
+import eu.timepit.refined.types.string.NonEmptyString
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration._
@@ -21,32 +25,26 @@ object AppConfig {
   }
 
   final case class DatabaseConfig(
-//      driver: NonEmptyString,
-    driver: String,
-//      url: NonEmptyString,
-    url: String,
-//      user: NonEmptyString,
-    user: String,
+    driver: NonEmptyString,
+    url: NonEmptyString,
+    user: NonEmptyString,
     password: String,
-    threadPoolSize: Int,
-//      chunks: PosInt
-    chunks: Int,
-    maxLifetime: Option[Long],
-    connTimeout: Option[Long],
-    locations: Seq[String]
+    threadPoolSize: PosInt,
+    chunks: PosInt,
+    maxLifetime: Option[PosLong],
+    connTimeout: Option[PosLong],
+    locations: NonEmptyList[NonEmptyString]
   )
 
   final case class HttpConfig(
-//    host: NonEmptyString,
-    host: String,
-//    port: PosInt
-    port: Int
+    host: NonEmptyString,
+    port: PosInt
   )
 
   final case class Cors(
-    allowedOrigins: Set[String],
-    allowedMethods: Set[String],
-    allowedHeaders: Set[String],
+    allowedOrigins: NonEmptyList[String],
+    allowedMethods: NonEmptyList[String],
+    allowedHeaders: NonEmptyList[String],
     maxAge: FiniteDuration = 30.minutes,
     exposedHeaders: Set[String] = Set.empty[String]
   ) {
@@ -54,10 +52,11 @@ object AppConfig {
       CORSConfig(
         allowCredentials = true,
         anyOrigin = false,
-        allowedOrigins = origin => allowedOrigins.contains(origin) || allowedOrigins.contains("*"),
+        allowedOrigins =
+          origin => allowedOrigins.toList.toSet.contains(origin) || allowedOrigins.toList.toSet.contains("*"),
         anyMethod = false,
-        allowedMethods = Some(allowedMethods),
-        allowedHeaders = Some(allowedHeaders),
+        allowedMethods = Some(allowedMethods.toList.toSet),
+        allowedHeaders = Some(allowedHeaders.toList.toSet),
         exposedHeaders = Some(exposedHeaders),
         maxAge = maxAge.toSeconds
       )
