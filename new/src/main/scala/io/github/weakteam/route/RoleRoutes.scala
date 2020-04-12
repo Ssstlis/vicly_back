@@ -11,11 +11,11 @@ object RoleRoutes {
     import dsl._
     val root = Root / "role"
     HttpRoutes.of[F] {
-      case POST -> `root` / _      => ???
-      case PATCH -> `root` / _ / _ => ???
-      case DELETE -> `root` / _    => ???
-      case GET -> `root` / "list"  => controller.list
-      case GET -> `root` / _       => ???
+      case req @ POST -> `root`         => controller.add(req)
+      case req @ PATCH -> `root` / id   => controller.update(req, id)
+      case DELETE -> `root` / id        => controller.delete(id)
+      case req @ GET -> `root` / "list" => controller.list(req)
+      case GET -> `root` / id           => controller.one(id)
     }
   }
 }

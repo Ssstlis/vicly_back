@@ -3,8 +3,9 @@ package io.github.weakteam.route
 import cats.effect.{Effect, IO}
 import cats.effect.syntax.effect._
 import cats.syntax.applicative._
+import cats.syntax.apply._
 import io.github.weakteam.controller.RoleController
-import org.http4s.{HttpRoutes, Request, Response, Status}
+import org.http4s.{HttpRoutes, Method, Request, Response, Status}
 import org.http4s.dsl.Http4sDsl
 import org.scalatest.matchers.must
 import org.scalatest.wordspec.AnyWordSpec
@@ -27,9 +28,66 @@ class RoleRoutesSpec extends AnyWordSpec with must.Matchers {
 
   "RoleRoutes#[GET /role/list]" should {
 
-    "return Ok" in withRoutes[IO](makeController(listf = () => Response[IO](status = Status.Ok).pure[IO])) { router =>
+    "return Ok" in withRoutes[IO](makeController(listf = _ => Response[IO](status = Status.Ok).pure[IO])) { router =>
       router
         .apply(Request(uri = uri"/role/list"))
+        .value
+        .map(_.get.status mustBe Status.Ok)
+    }
+  }
+
+  "RoleRoutes#[GET /role/id" should {
+    "return Ok (flaky)" in withRoutes[IO](
+      makeController(onef = { id =>
+        id mustBe "flaky"
+        Response[IO](status = Status.Ok).pure[IO]
+      })
+    ) { router =>
+      router
+        .apply(Request(uri = uri"/role/flaky"))
+        .value
+        .map(_.get.status mustBe Status.Ok)
+    }
+  }
+
+  "RoleRoutes#[POST /role" should {
+    "return Ok" in withRoutes[IO](
+      makeController(addf = { req =>
+        req.attemptAs[String].value.map(_ mustBe Right("test")) *>
+          Response[IO](status = Status.Ok).pure[IO]
+      })
+    ) { router =>
+      router
+        .apply(Request(uri = uri"/role", method = Method.POST).withEntity("test"))
+        .value
+        .map(_.get.status mustBe Status.Ok)
+    }
+  }
+
+  "RoleRoutes#[PATCH /role/id" should {
+    "return Ok" in withRoutes[IO](
+      makeController(updatef = { (req, id) =>
+        id mustBe "flaky"
+        req.attemptAs[String].value.map(_ mustBe Right("test")) *>
+          Response[IO](status = Status.Ok).pure[IO]
+      })
+    ) { router =>
+      router
+        .apply(Request(uri = uri"/role/flaky", method = Method.PATCH).withEntity("test"))
+        .value
+        .map(_.get.status mustBe Status.Ok)
+    }
+  }
+
+  "RoleRoutes#[DELETE /role/id" should {
+    "return Ok" in withRoutes[IO](
+      makeController(deletef = { id =>
+        id mustBe "flaky"
+        Response[IO](status = Status.Ok).pure[IO]
+      })
+    ) { router =>
+      router
+        .apply(Request(uri = uri"/role/flaky", method = Method.DELETE))
         .value
         .map(_.get.status mustBe Status.Ok)
     }
@@ -42,7 +100,7 @@ object RoleRoutesSpec {
 
   def makeController[F[_]: Applicative](
     onef: String => F[Response[F]] = null,
-    listf: () => F[Response[F]] = null,
+    listf: Request[F] => F[Response[F]] = null,
     addf: Request[F] => F[Response[F]] = null,
     deletef: String => F[Response[F]] = null,
     updatef: (Request[F], String) => F[Response[F]] = null
@@ -50,8 +108,8 @@ object RoleRoutesSpec {
     def one(id: String): F[Response[F]] =
       if (onef == null) defaultResponse[F].pure[F] else onef(id)
 
-    def list: F[Response[F]] =
-      if (listf == null) defaultResponse[F].pure[F] else listf()
+    def list(request: Request[F]): F[Response[F]] =
+      if (listf == null) defaultResponse[F].pure[F] else listf(request)
 
     def add(request: Request[F]): F[Response[F]] =
       if (addf == null) defaultResponse[F].pure[F] else addf(request)

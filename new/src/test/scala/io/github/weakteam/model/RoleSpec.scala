@@ -21,7 +21,7 @@ class RoleSpec extends AnyWordSpec with Matchers {
 }
 
 object RoleSpec {
-  val role = Role(PosInt.unsafeFrom(1), PosInt.unsafeFrom(1), "test description")
+  val role = Role(PosInt.unsafeFrom(1), PosInt.unsafeFrom(1), Some("test description"))
 
   val roleJson = Json.obj(
     "id" -> 1.asJson,

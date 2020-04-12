@@ -1,6 +1,7 @@
 package io.github.weakteam.service
 
 import cats.{~>, FlatMap, Monad}
+import cats.syntax.apply._
 import cats.syntax.functor._
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
@@ -12,6 +13,10 @@ import tofu.syntax.logging._
 
 trait RoleService[F[_]] {
   def findAllPaginated(lastKey: Option[PosInt]): F[Stream[F, Role]]
+  def findOne(key: PosInt): F[Option[Role]]
+  def insert(role: Role): F[Int]
+  def update(role: Role): F[Int]
+  def remove(id: PosInt): F[Int]
 }
 
 object RoleService {
@@ -33,10 +38,30 @@ object RoleService {
     xa: DB ~> F
   )(implicit logger: LoggingBase[F])
     extends RoleService[F] {
+
     def findAllPaginated(lastKey: Option[PosInt]): F[Stream[F, Role]] = {
       info"findAllPaginated with lastKey $lastKey".as {
         repository.findAllPaginated(lastKey).translate(xa)
       }
+    }
+
+    def findOne(key: PosInt): F[Option[Role]] = {
+      info"findOne with key $key" *>
+        xa(repository.findOne(key))
+    }
+
+    def insert(role: Role): F[Int] = {
+      info"insert ${role.groupId}, ${role.description}" *>
+        xa(repository.insert(role.groupId, role.description))
+    }
+
+    def update(role: Role): F[Int] = {
+      info"update ${role.id}, ${role.groupId}, ${role.description}" *>
+        xa(repository.update(role))
+    }
+
+    def remove(id: PosInt): F[Int] = {
+      info"remove $id" *> xa(repository.remove(id))
     }
   }
 }

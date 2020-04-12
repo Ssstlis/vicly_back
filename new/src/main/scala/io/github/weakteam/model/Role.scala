@@ -8,5 +8,5 @@ import io.circe.refined._
 final case class Role(
   id: PosInt,
   groupId: PosInt,
-  description: String
+  description: Option[String]
 )

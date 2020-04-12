@@ -12,9 +12,14 @@ import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.fragment.Fragment
 import cats.instances.list._
+import doobie.util.update.Update
 
 trait RoleRepository[DB[_]] {
   def findAllPaginated(lastKey: Option[PosInt]): Stream[DB, Role]
+  def findOne(id: PosInt): DB[Option[Role]]
+  def insert(groupId: PosInt, description: Option[String]): DB[Int]
+  def update(role: Role): DB[Int]
+  def remove(id: PosInt): DB[Int]
 }
 
 object RoleRepository {
@@ -36,6 +41,30 @@ object RoleRepository {
             Fragment.const("order by id asc limit 20")
 
       Stream.evals(xa(frag.query[Role].to[List]))
+    }
+
+    def findOne(id: PosInt): DB[Option[Role]] = {
+      xa(sql"select id, group_id, description from roles where id = $id".query[Role].option)
+    }
+
+    def remove(id: PosInt): DB[Int] = {
+      xa(sql"delete from roles where id = $id".update.run)
+    }
+
+    def update(role: Role): DB[Int] = {
+      xa(
+        Update[((Option[String], PosInt), PosInt)](
+          s"update roles set description = ?, group_id = ? where id = ?"
+        ).toUpdate0(((role.description, role.groupId), role.id)).run
+      )
+    }
+
+    def insert(groupId: PosInt, description: Option[String]): DB[Int] = {
+      xa(
+        Update[(PosInt, Option[String])](
+          s"insert into roles (group_id, description) values (?, ?)"
+        ).toUpdate0((groupId, description)).run
+      )
     }
   }
 
