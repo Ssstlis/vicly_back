@@ -52,7 +52,7 @@ object Dependencies {
     val circe      = depLinker(circeL)(Seq("-core", "-generic", "-parser", "-refined"))
     val http4s     = depLinker(http4sL)(Seq("-dsl", "-blaze-server", "-blaze-client", "-circe"))
     val refined    = depLinker(refinedL)(Seq("", "-cats", "-pureconfig"))
-    val pureConfig = depLinker(pureConfigL)(Seq("", "-cats-effect"))
+    val pureConfig = depLinker(pureConfigL)(Seq("", "-cats", "-cats-effect"))
 
     val http4sJwtAuth = "dev.profunktor" %% "http4s-jwt-auth" % Versions.http4sJwtAuth
 

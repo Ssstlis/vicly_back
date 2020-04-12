@@ -6,7 +6,8 @@ import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import io.github.weakteam.model.Role
 import io.github.weakteam.repository.RoleRepository
-import tofu.logging.{Loggable, LoggingBase, Logs}
+import io.github.weakteam.util.tofu.logging.implicits._
+import tofu.logging.{LoggingBase, Logs}
 import tofu.syntax.logging._
 
 trait RoleService[F[_]] {
@@ -14,8 +15,6 @@ trait RoleService[F[_]] {
 }
 
 object RoleService {
-
-  implicit val posIngLoggable: Loggable[PosInt] = Loggable.intLoggable.contramap[PosInt](_.value)
 
   def apply[I[_]: FlatMap, F[_]: Monad, DB[_]](
     repository: RoleRepository[DB],

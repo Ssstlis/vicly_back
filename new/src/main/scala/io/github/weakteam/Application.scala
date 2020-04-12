@@ -46,7 +46,7 @@ object Application extends IOApp {
     } yield {
 
       val router = {
-        (GZip[F](config.gzip.bufferSizeMultiplier * 1024) _)
+        (GZip[F](config.gzip.bufferSizeMultiplier.value * 1024) _)
           .compose(Client.fromHttpApp[F])(
             CORS(
               mkRouter(roleService),
