@@ -6,7 +6,8 @@ import cats.syntax.flatMap._
 import cats.syntax.apply._
 import cats.~>
 import config.AppConfig
-import io.github.weakteam.controller.{RoleController, VersionController}
+import io.github.weakteam.controller.RoleController
+import io.github.weakteam.route.{RoleRoutes, VersionRoutes}
 import io.github.weakteam.database.{DbTransactor, Flyway}
 import io.github.weakteam.repository.RoleRepository
 import io.github.weakteam.service.RoleService
@@ -22,12 +23,12 @@ import tofu.logging.Logs
 
 object Application extends IOApp {
 
-  def mkRouter[F[_]: Sync](roleService: RoleService[F]): HttpRoutes[F] = {
+  def mkRouter[F[_]: Sync](roleController: RoleController[F]): HttpRoutes[F] = {
     implicit val dsl: Http4sDsl[F] = new Http4sDsl[F] {}
 
     Router(
-      "/" -> VersionController.routes[F],
-      "/api" -> RoleController.routes[F](roleService)
+      "/" -> VersionRoutes.routes[F],
+      "/api" -> RoleRoutes.routes[F](roleController)
     )
   }
 
@@ -43,13 +44,14 @@ object Application extends IOApp {
       trans <- DbTransactor.resource[F](config.db).mapK(fk)
       roleRep <- Resource.liftF(RoleRepository[I, F](trans, logProvider))
       roleService <- Resource.liftF(RoleService[I, F, F](roleRep, FunctionK.id, logProvider))
+      roleController <- Resource.liftF(RoleController[I, F](roleService, logProvider))
     } yield {
 
       val router = {
         (GZip[F](config.gzip.bufferSizeMultiplier.value * 1024) _)
           .compose(Client.fromHttpApp[F])(
             CORS(
-              mkRouter(roleService),
+              mkRouter(roleController),
               config.cors.toHttp4sCors
             ).orNotFound
           )

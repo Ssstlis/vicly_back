@@ -2,34 +2,49 @@ package io.github.weakteam.controller
 
 import cats.effect.Sync
 import cats.syntax.functor._
-import fs2.Stream
-import io.circe.Encoder
+import com.github.ghik.silencer.silent
 import io.github.weakteam.model.Role
 import io.github.weakteam.service.RoleService
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
+import io.github.weakteam.util.http4s.ResponseOps
+import io.github.weakteam.util.http4s.Typed._
 import org.http4s.headers.`Content-Type`
+import org.http4s.{MediaType, Request, Response}
+import tofu.logging.{Logging, LoggingBase, Logs}
+
+trait RoleController[F[_]] {
+  def one(id: String): F[Response[F]]
+  def list: F[Response[F]]
+  def add(request: Request[F]): F[Response[F]]
+  def delete(id: String): F[Response[F]]
+  def update(request: Request[F], id: String): F[Response[F]]
+}
 
 object RoleController {
+  def apply[I[_]: Sync, F[_]: Sync](service: RoleService[F], logs: Logs[I, F]): I[RoleController[F]] = {
+    for {
+      implicit0(logger: Logging[F]) <- logs.forService[RoleController[F]]
+    } yield new Impl[F](service)
+  }
 
-  def streamedPipeEncoder[F[_], T](implicit E: Encoder[T]): T => Stream[F, Byte] = jsonEncoderOf(E).toEntity(_).body
+  private final class Impl[F[_]: Sync](
+    service: RoleService[F]
+  )(implicit @silent logger: LoggingBase[F])
+    extends RoleController[F] {
 
-  def routes[F[_]: Sync](service: RoleService[F])(implicit dsl: Http4sDsl[F]): HttpRoutes[F] = {
-    import dsl._
-    val root = Root / "role"
-    HttpRoutes.of[F] {
-      case POST -> `root` / _      => ???
-      case PATCH -> `root` / _ / _ => ???
-      case DELETE -> `root` / _    => ???
-      case GET -> `root` / "list" =>
-        val en = streamedPipeEncoder[F, Role]
-        service.findAllPaginated(None).map { s =>
-          Response[F](Status.Ok)
-            .withBodyStream(s.flatMap(en))
-            .withContentType(`Content-Type`(MediaType.application.json))
-        }
-      case GET -> `root` / _ => ???
+    val en: Role => fs2.Stream[F, Byte] = streamedPipeEncoder[F, Role]
+
+    def one(id: String): F[Response[F]] = ???
+
+    def list: F[Response[F]] = {
+      service.findAllPaginated(None).map { s =>
+        ResponseOps.Ok[F](s.flatMap(en)).withContentType(`Content-Type`(MediaType.application.json))
+      }
     }
+
+    def add(request: Request[F]): F[Response[F]] = ???
+
+    def delete(id: String): F[Response[F]] = ???
+
+    def update(request: Request[F], id: String): F[Response[F]] = ???
   }
 }

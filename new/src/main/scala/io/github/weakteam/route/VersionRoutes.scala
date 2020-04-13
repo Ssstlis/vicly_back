@@ -1,4 +1,4 @@
-package io.github.weakteam.controller
+package io.github.weakteam.route
 
 import cats.effect.Sync
 import cats.syntax.applicative._
@@ -11,7 +11,7 @@ import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 
-object VersionController {
+object VersionRoutes {
   def routes[F[_]: Sync](implicit dsl: Http4sDsl[F]): HttpRoutes[F] = {
     import dsl._
     HttpRoutes.of[F] {

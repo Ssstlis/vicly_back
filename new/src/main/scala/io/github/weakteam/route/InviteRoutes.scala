@@ -1,10 +1,10 @@
-package io.github.weakteam.controller
+package io.github.weakteam.route
 
 import cats.effect.Sync
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 
-object InviteController {
+object InviteRoutes {
   def routes[F[_]: Sync](implicit dsl: Http4sDsl[F]): HttpRoutes[F] = {
     import dsl._
     val root = Root / "invite"
