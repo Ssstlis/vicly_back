@@ -33,4 +33,15 @@ object Typed {
             Left(new RuntimeException(s"""Required valid int, actual value: "$s""""))
         }
     )
+
+  def mapMLong[M[_]](s: String)(implicit F: ApplicativeError[M, _ >: RuntimeException]) =
+    new MapMonadicPartialApplied[M](s)(
+      s =>
+        try {
+          Right(s.toLong)
+        } catch {
+          case _: NumberFormatException =>
+            Left(new RuntimeException(s"""Required valid long, actual value: "$s""""))
+        }
+    )
 }

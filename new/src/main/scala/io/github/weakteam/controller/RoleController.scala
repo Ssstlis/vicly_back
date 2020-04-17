@@ -8,11 +8,13 @@ import eu.timepit.refined.numeric.Positive
 import io.circe.syntax._
 import io.circe.{Decoder, Json}
 import io.github.weakteam.model.Role
+import io.github.weakteam.model.Role.RoleId._
 import io.github.weakteam.service.RoleService
 import io.github.weakteam.util.Typed._
 import io.github.weakteam.util.http4s.ResponseOps
 import io.github.weakteam.util.http4s.Typed._
 import org.http4s.circe._
+import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.headers.`Content-Type`
 import org.http4s.{MediaType, Request, Response, Status}
 import tofu.logging.{Logging, LoggingBase, Logs}
@@ -37,25 +39,23 @@ object RoleController {
   )(implicit @silent logger: LoggingBase[F])
     extends RoleController[F] {
 
-    val en: fs2.Stream[F, Role] => fs2.Stream[F, Byte] = streamedPipeEncoder[F, Role]
-
     def one(id: String): F[Response[F]] =
       for {
-        int <- mapMInt[F](id) >>= (refineMonadic[F, Positive](_))
-        role <- service.findOne(int)
+        long <- mapMLong[F](id) >>= (refineMonadic[F, Positive](_))
+        role <- service.findOne(long)
       } yield {
         role match {
-          case Some(value) => ResponseOps.Ok[F](value.asJson)
-          case _           => ResponseOps.BadRequest[F](Json.obj("error" := List(s"Role with id $int not found.")))
+          case Some(value) => ResponseOps.Ok[F](value)
+          case _           => ResponseOps.BadRequest[F](Json.obj("error" := List(s"Role with id $long not found.")))
         }
       }
 
     def list(request: Request[F]): F[Response[F]] = {
-      findOneOptPositiveInt[F]("lastKey")
+      findOneOptPositiveLong[F]("lastKey")
         .apply(request)
         .flatMap { lastKey =>
           service.findAllPaginated(lastKey).map { s =>
-            ResponseOps.Ok[F](en(s)).withContentType(`Content-Type`(MediaType.application.json))
+            ResponseOps.Ok[F](s).withContentType(`Content-Type`(MediaType.application.json))
           }
         }
     }
@@ -70,18 +70,17 @@ object RoleController {
 
     def delete(id: String): F[Response[F]] =
       for {
-        int <- mapMInt[F](id) >>= (refineMonadic[F, Positive](_))
-        removed <- service.remove(int)
+        id <- mapMLong[F](id) >>= (refineMonadic[F, Positive](_))
+        removed <- service.remove(id)
       } yield {
         Response[F](if (removed == 1) Status.Ok else Status.NotModified)
       }
 
     def update(request: Request[F], id: String): F[Response[F]] =
       for {
-        //Forward changes by models
-        _ <- mapMInt[F](id) >>= (refineMonadic[F, Positive](_))
+        id <- mapMLong[F](id) >>= (refineMonadic[F, Positive](_))
         role <- request.attemptAs[Json].subflatMap(Decoder[Role].decodeJson(_)).rethrowT
-        updated <- service.update(role)
+        updated <- service.update(role, id)
       } yield {
         Response[F](if (updated == 1) Status.Ok else Status.NotModified)
       }

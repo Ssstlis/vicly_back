@@ -2,9 +2,15 @@ package io.github.weakteam.model
 
 import java.util.UUID
 
+import eu.timepit.refined.types.numeric.PosLong
 import io.circe.Json
 import io.circe.syntax._
+import io.github.weakteam.model.Group.GroupId
+import io.github.weakteam.model.Invite.{InviteId, RichInvite}
+import io.github.weakteam.model.Invite.InviteId._
+import io.github.weakteam.model.WithId._
 import io.github.weakteam.model.InviteSpec._
+import io.github.weakteam.model.User.UserId
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -15,7 +21,7 @@ class InviteSpec extends AnyWordSpec with Matchers {
     }
 
     "valid encode" in {
-      inviteJson.as[Invite] mustBe Right(invite)
+      inviteJson.as[RichInvite] mustBe Right(invite)
     }
   }
 }
@@ -23,18 +29,20 @@ class InviteSpec extends AnyWordSpec with Matchers {
 object InviteSpec {
   val uuid = UUID.randomUUID()
 
-  val invite = Invite(
-    id = 1,
-    firstName = "John",
-    surname = Some("II"),
-    lastName = "Doe",
-    position = Some("employee"),
-    uuid = uuid,
-    groupId = 1,
-    inviterId = 1
+  val invite: WithId[InviteId, Invite] = WithId(
+    InviteId(PosLong.unsafeFrom(1L)),
+    Invite(
+      firstName = "John",
+      surname = Some("II"),
+      lastName = "Doe",
+      position = Some("employee"),
+      uuid = uuid,
+      groupId = GroupId(PosLong.unsafeFrom(1L)),
+      inviterId = UserId(PosLong.unsafeFrom(1L))
+    )
   )
 
-  val inviteJson = Json.obj(
+  val inviteJson: Json = Json.obj(
     "id" -> 1.asJson,
     "firstName" -> "John".asJson,
     "surname" -> "II".asJson,

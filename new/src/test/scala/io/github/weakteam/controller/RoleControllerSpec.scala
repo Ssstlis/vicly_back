@@ -6,17 +6,19 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.effect.{Effect, IO}
 import cats.effect.syntax.effect._
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.PosLong
 import fs2.Stream
 import io.circe.Json
 import io.circe.syntax._
-import io.github.weakteam.model.Role
+import io.github.weakteam.model.{Role, WithId}
 import io.github.weakteam.service.RoleService
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import tofu.logging.Logs
 import tofu.syntax.foption._
 import RoleControllerSpec._
+import io.github.weakteam.model.Group.GroupId
+import io.github.weakteam.model.Role.{RichRole, RoleId}
 import org.http4s.Status
 import org.http4s.circe._
 
@@ -33,8 +35,8 @@ class RoleControllerSpec extends AnyWordSpec with Matchers {
     }
 
     "return BadRequest" in withController[IO](makeService[IO](findOnef = { id =>
-      id.value mustBe 1
-      noneF[IO, Role]
+      id.value mustBe 1L
+      noneF[IO, RichRole]
     })) { ctl =>
       ctl.one("1").map { resp =>
         resp.status mustBe Status.BadRequest
@@ -53,7 +55,7 @@ class RoleControllerSpec extends AnyWordSpec with Matchers {
     "return BadRequestS" in withController[IO]() { ctl =>
       ctl.one("t").void.recoverWith {
         case ex: RuntimeException =>
-          ex.getMessage mustBe """Required valid int, actual value: "t""""
+          ex.getMessage mustBe """Required valid long, actual value: "t""""
           IO.unit
       }
     }
@@ -61,21 +63,25 @@ class RoleControllerSpec extends AnyWordSpec with Matchers {
 }
 
 object RoleControllerSpec {
-  val defaultRole: Role     = Role(PosInt.unsafeFrom(1), PosInt.unsafeFrom(1), Some("test"))
+  val defaultRole: WithId[RoleId, Role] =
+    WithId(
+      RoleId(PosLong.unsafeFrom(1L)),
+      Role(GroupId(PosLong.unsafeFrom(1L)), Some("test"))
+    )
   val defaultRoleJson: Json = defaultRole.asJson
 
   def makeService[F[_]](
-    findAll: Option[PosInt] => F[Stream[F, Role]] = null,
-    findOnef: PosInt => F[Option[Role]] = null,
+    findAll: Option[PosLong] => F[Stream[F, RichRole]] = null,
+    findOnef: PosLong => F[Option[RichRole]] = null,
     insertf: Role => F[Int] = null,
-    updatef: Role => F[Int] = null,
-    removef: PosInt => F[Int] = null
+    updatef: (Role, PosLong) => F[Int] = null,
+    removef: PosLong => F[Int] = null
   ): RoleService[F] = new RoleService[F] {
-    def findAllPaginated(lastKey: Option[PosInt]): F[Stream[F, Role]] = findAll(lastKey)
-    def findOne(key: PosInt): F[Option[Role]]                         = findOnef(key)
-    def insert(role: Role): F[Int]                                    = insertf(role)
-    def update(role: Role): F[Int]                                    = updatef(role)
-    def remove(id: PosInt): F[Int]                                    = removef(id)
+    def findAllPaginated(lastKey: Option[PosLong]): F[Stream[F, RichRole]] = findAll(lastKey)
+    def findOne(key: PosLong): F[Option[RichRole]]                         = findOnef(key)
+    def insert(role: Role): F[Int]                                         = insertf(role)
+    def update(role: Role, id: PosLong): F[Int]                            = updatef(role, id)
+    def remove(id: PosLong): F[Int]                                        = removef(id)
   }
 
   def makeDefaultService[F[_]]: RoleService[F] = makeService[F]()
