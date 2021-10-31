@@ -68,7 +68,5 @@ object Dependencies {
   object CompilePlugins {
     val bm4           = "com.olegpy"      %% "better-monadic-for" % Versions.bm4
     val kindProjector = "org.typelevel"   % "kind-projector"      % Versions.kindProjector
-    val silencer      = "com.github.ghik" % "silencer-plugin"     % Versions.silencer cross CrossVersion.full
-    val silencerLib   = "com.github.ghik" % "silencer-lib"        % Versions.silencer % Provided cross CrossVersion.full
   }
 }
